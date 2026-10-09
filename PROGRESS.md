@@ -2,14 +2,14 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 0 — build not started
-**Last updated:** 9 October 2026 — by Project Governor, pre-build
+**Session:** 1 — in progress
+**Last updated:** 9 October 2026 — session 1, Claude Code
 **Live URL:** none yet [Rule: fill in after the first successful deploy]
 **Stage:** business logic and database [Rule: one of — business logic and database / second screen and access design / login and access rules together / deploy and maintain. Advance it when that stage's items are absorbed into Current state. Decided by what exists, never by a week or a version number.]
 **Supabase project:** exists and empty — ravensberg-consumer-brands, ref bqyjulvljqafubusplgm, URL https://bqyjulvljqafubusplgm.supabase.co; no tables yet [Rule: the only place project state is recorded; CLAUDE.md never carries it]
 
 ## Current state
-Nothing built. Repo contains CLAUDE.md, PROGRESS.md, product-spec.md (v1.1), access-matrix.md and user-stories.md (short form, P2 internal only), and the ravensberg-brand skill files (SKILL.md, assets/, templates/ — installed in session 1).
+First Session Setup done: docs/ holds product-spec.md (v1.1), access-matrix.md and user-stories.md (short form, P2 internal only); the ravensberg-brand skill is installed at .claude/skills/ravensberg-brand/ (SKILL.md, assets/, templates/); the logo files and favicon are copied to public/assets/. Nothing else built yet.
 [Rule: what exists and works right now — never what is planned. Completed checklist items are absorbed here in compressed form.]
 
 ## Last session
@@ -19,7 +19,6 @@ None — the first build session has not happened yet.
 ## Remaining work
 - [ ] Builder: create the GitHub repo, upload the files above flat to the root, connect the repo to a Netlify site
 - [ ] Builder: connect Supabase to the Netlify site with the Supabase extension (project ravensberg-consumer-brands, framework Vite), check the key values start with `sb_` (if `eyJ`: paste the publishable key by hand and add "rotate the secret key" to the Backlog), redeploy
-- [ ] First Session Setup: create docs/, move the spec and the two access files into it and check each is there, install the ravensberg-brand skill, commit (see CLAUDE.md Session Protocol)
 - [ ] Connect to ravensberg-consumer-brands (ref bqyjulvljqafubusplgm): confirm it is empty (stop if not), read its region (not EU → Known issues); never create a project
 - [ ] Build all seven tables (every change a named migration, saved in supabase/migrations/) with RLS on every table from creation, the login-ready columns, anon's table grants revoked, no role policy (access-matrix.md lines 1–2); seed sites, targets and the three named profiles by migration (line 3) — no Auth, no screen reads a real row — then write docs/supabase-setup.md following the structure in CLAUDE.md
 - [ ] Create src/fixtures/ with one JSON file per table, shaped exactly like the schema: the mock-up's 37 projects, decisions and history across every status, the seven sites' FY2024, plan-2030 and latest waste figures (made up; spec §15), the four targets, the three profiles

@@ -192,13 +192,13 @@ None yet. Configured in the access phase only, after the full docs/access-matrix
 | `SUPABASE_SERVICE_ROLE_KEY` | Netlify Functions only (admin user-creation, access phase); value must be the secret key (`sb_secret_…`) | Netlify env, written by the Supabase extension |
 | `SUPABASE_DATABASE_URL` | server-side only, if ever needed | Netlify env, written by the Supabase extension |
 
-Names to be verified on the first live build; if the extension writes different names, record the real names here. Nothing reads them yet: `src/lib/supabase.js` exists but no screen calls it.
+Verified on 9 October 2026 when the builder connected the extension with the Vite preset (prefix `VITE_`): the extension's own list is `SUPABASE_DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` and `SUPABASE_JWT_SECRET` (the project's JWT secret; a secret, server-side only, not used by this tool), plus the prefixed browser pair `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` that the app reads. Whether the key values are the new `sb_` keys or the legacy `eyJ` ones is still to be reported by the builder (§9). Nothing reads them yet: `src/lib/supabase.js` exists but no screen calls it.
 
 ## 9. Notes and flags for future sessions
 
 - The database holds the seeds only. Every screen reads `src/fixtures/*.json`; the fixture `profiles.json` holds the three seeded people plus seven made-up site users (one per site, Zee for 1200) and one retired user, so every fixture project has a submitter and the Users screen has a list. The seeded `profiles` table holds the three named holders only.
 - Zee's site is seeded as 1200 Werk Paderborn; confirm before the Access Architect's full run (spec §15).
-- Legacy API keys: not checked yet (the Netlify site is not connected in session 1). On the first live build, check that the values start with `sb_`; if `eyJ`, the publishable key is pasted by hand and rotating the secret key becomes a dated handover item.
+- Legacy API keys: the extension is connected (9 Oct 2026) but the builder has not yet reported whether the values start with `sb_` or `eyJ`. If `eyJ`: the publishable key is pasted by hand in Netlify and rotating the secret key becomes a dated handover item.
 - `status` on decisions and reference_figures defaults to `'active'`; the full run fixes the other values (the calculations ignore rows with status `void`).
 - Reporting year = the portfolio as of the end of that year (status rebuilt from `project_history` status rows); the current year = as of today. Build decision in PROGRESS.md.
 - Carried to the full run (docs/access-matrix.md): Approved final yet editable by the ESG lead; Users screen changes role and site; `reference_figures_history`; Zee's site.

@@ -3,7 +3,7 @@
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
 **Session:** 1
-**Last updated:** 9 October 2026 — session 1, Claude Code
+**Last updated:** 9 October 2026 — session 1, Claude Code (after the merge of pull request #1)
 **Live URL:** none yet [Rule: fill in after the first successful deploy]
 **Stage:** second screen and access design [Rule: one of — business logic and database / second screen and access design / login and access rules together / deploy and maintain. Advance it when that stage's items are absorbed into Current state. Decided by what exists, never by a week or a version number.]
 **Supabase project:** ravensberg-consumer-brands, ref bqyjulvljqafubusplgm, URL https://bqyjulvljqafubusplgm.supabase.co, region eu-central-1, Free plan. Seven tables with RLS on and no policy; seeds only (sites 7, profiles 3, targets 4); eight migrations applied and saved in supabase/migrations/. No Auth. [Rule: the only place project state is recorded; CLAUDE.md never carries it]
@@ -19,11 +19,10 @@
 [Rule: what exists and works right now — never what is planned. Completed checklist items are absorbed here in compressed form.]
 
 ## Last session
-Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empty and in the EU; built the seven tables as eight named migrations with RLS, revoked grants and seeds; wrote docs/supabase-setup.md; generated the fixture data; built the spec §9 calculations, all seven screens and both exports on fixture data; build and browser walkthrough clean. Work pushed to branch `claude/elegant-pasteur-s4jgz3` (not main, see Known issues).
+Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empty and in the EU; built the seven tables as eight named migrations with RLS, revoked grants and seeds; wrote docs/supabase-setup.md; generated the fixture data; built the spec §9 calculations, all seven screens and both exports on fixture data; build and browser walkthrough clean. Merged into main through pull request ZHatquai/ravensberg-consumer-brands-project-tracker#1 on 9 Oct 2026; Netlify deploys main.
 [Rule: 3–5 lines maximum. Replace each session.]
 
 ## Remaining work
-- [ ] Builder: merge pull request ZHatquai/ravensberg-consumer-brands-project-tracker#1 (branch `claude/elegant-pasteur-s4jgz3`) into main; the Netlify site `sustainability-project-tracker` is already connected to the repo (its deploy preview of the PR built green; production deploys from main)
 - [ ] Builder: connect Supabase to the Netlify site `sustainability-project-tracker` with the Supabase extension (project ravensberg-consumer-brands, framework Vite), check the key values start with `sb_` (if `eyJ`: paste the publishable key by hand and add "rotate the secret key" to the Backlog), redeploy; record the real variable names in docs/supabase-setup.md §8 if they differ
 - [ ] Builder: confirm Zee's site (1200 Werk Paderborn assumed) and review the four points carried to the full run in docs/access-matrix.md
 - [ ] Builder: verify mail.sustainos.io in Resend and have the SMTP settings ready for Supabase → Auth (before the access phase)
@@ -32,7 +31,7 @@ Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empt
 - [ ] Builder: local test pass — full walkthrough of every view on fixture data before deploying (Claude Code did one in headless Chromium; a human pass is still due)
 - [ ] Acceptance criteria pass — spec §13: on fixture data, 2, 3, 4 (except row actions), 5 (validation), 8, 9, 10, 11, 14, 15 and 16 (no notice, no checkbox, no privacy page) are met; 1, 6, 7, 12 (edits), 13, 17 and 18 wait for the access phase and the deploy
 - [ ] Builder: keep the Supabase project active, or upgrade to Pro (manual billing step), for the workshop week; Free has no backups and pauses when idle
-- [ ] Push to main → Netlify auto-deploys; fill in the Live URL above
+- [ ] Builder: open the production site (expected https://sustainability-project-tracker.netlify.app, the Netlify site connected to the repo), check it shows the Overview on fixture data, and fill in the Live URL above
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
@@ -53,7 +52,7 @@ Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empt
 [Rule: one line per decision made during the build that is not in the spec. Future sessions depend on these to stay consistent.]
 
 ## Known issues
-- Session 1 work is on branch `claude/elegant-pasteur-s4jgz3`, open as pull request ZHatquai/ravensberg-consumer-brands-project-tracker#1 (https://github.com/ZHatquai/ravensberg-consumer-brands-project-tracker/pull/1). Netlify built a deploy preview of it (https://deploy-preview-1--sustainability-project-tracker.netlify.app, not opened from the build sandbox); the production site deploys only after the merge into main.
+- The production deploy after the merge of pull request #1 was not opened from the build sandbox (netlify.app is unreachable from it); the deploy preview of the PR built green, so the production build should match. Confirm the URL and fill in the Live URL line.
 - Zee's site assumed 1200 Werk Paderborn in the seeded profile and the fixtures; confirm before the Access Architect's full run (spec §15).
 - status on decisions and reference_figures defaults to 'active'; the full run fixes the other values (the calculations skip rows with status 'void').
 - Carried to the full run (access-matrix.md): Approved is final but the ESG lead edits approved figures; Users screen changes role and site; reference_figures needs a history table; Zee's site.

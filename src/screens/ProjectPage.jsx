@@ -14,7 +14,7 @@ const FIGURE_LABEL = { total_impact: 'Total impact', annual_impact: 'Annual impa
 export default function ProjectPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { year, years, siteId, isSiteUser, isEsgLead, viewer, version } = useAppState()
+  const { year, years, siteId, isSiteUser, isEsgLead, viewer, version, notify } = useAppState()
   const [dialog, setDialog] = useState(null) // the open action: endorse | decline | record | figures | obsolete | reapprove | resubmit | retire | reinstate
   const [outcome, setOutcome] = useState('Approved')
   const [fig, setFig] = useState({})
@@ -238,8 +238,14 @@ export default function ProjectPage() {
         </div>
       </section>
 
-      {dialog === 'endorse' && <ActionDialog title={`Endorse ${p.project_code}`} intro={`${p.title} goes to the committee as Pending approval.`} confirmLabel="Endorse" onConfirm={({ comment }) => endorseProject(p.id, comment)} onClose={() => setDialog(null)} />}
-      {dialog === 'decline' && <ActionDialog title={`Decline ${p.project_code}`} intro={`${p.title} is declined; its owner can resubmit a new version or retire it.`} confirmLabel="Decline" danger onConfirm={({ comment }) => declineProject(p.id, comment)} onClose={() => setDialog(null)} />}
+      {dialog === 'endorse' && <ActionDialog title={`Endorse ${p.project_code}`} intro={`${p.title} goes to the committee as Pending approval.`} confirmLabel="Endorse" onConfirm={async ({ comment }) => {
+            await endorseProject(p.id, comment)
+            notify({ title: `${p.project_code} endorsed`, lines: ['Status: Pending approval, now with the committee', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />}
+      {dialog === 'decline' && <ActionDialog title={`Decline ${p.project_code}`} intro={`${p.title} is declined; its owner can resubmit a new version or retire it.`} confirmLabel="Decline" danger onConfirm={async ({ comment }) => {
+            await declineProject(p.id, comment)
+            notify({ title: `${p.project_code} declined`, lines: ['Status: Declined. Its owner can resubmit a new version or retire it', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />}
       {dialog === 'record' && (
         <ActionDialog
           title={`Committee decision on ${p.project_code}`}
@@ -261,7 +267,10 @@ export default function ProjectPage() {
               </div>
             ),
           }}
-          onConfirm={({ comment, attendees, decision_date }) => recordCommitteeDecision(p.id, outcome, comment, attendees, decision_date)}
+          onConfirm={async ({ comment, attendees, decision_date }) => {
+            await recordCommitteeDecision(p.id, outcome, comment, attendees, decision_date)
+            notify({ title: `Committee decision recorded for ${p.project_code}`, lines: [`Outcome: ${outcome}`, `Decision date: ${fmtDate(decision_date)}`, `People in the room: ${attendees}`, `Comment: ${comment}`] })
+          }}
           onClose={() => setDialog(null)}
         />
       )}
@@ -285,11 +294,18 @@ export default function ProjectPage() {
               </div>
             ),
           }}
-          onConfirm={({ comment }) => editProjectFigures(p.id, figureChanges(), comment)}
+          onConfirm={async ({ comment }) => {
+            const changes = figureChanges()
+            await editProjectFigures(p.id, changes, comment)
+            notify({ title: `Figures of ${p.project_code} corrected`, lines: [...Object.entries(changes).map(([k, v]) => `${FIGURE_LABEL[k]}: ${fmtInt(p[k])} to ${fmtInt(v)}`), `Comment: ${comment}`, 'Each change is in the history with the comment'] })
+          }}
           onClose={() => setDialog(null)}
         />
       )}
-      {dialog === 'obsolete' && <ActionDialog title={`Mark ${p.project_code} obsolete`} intro="The savings leave every year of the pathway; the row stays visible with its history. Reinstate undoes a mistake." confirmLabel="Mark obsolete" danger onConfirm={({ comment }) => markProjectObsolete(p.id, comment)} onClose={() => setDialog(null)} />}
+      {dialog === 'obsolete' && <ActionDialog title={`Mark ${p.project_code} obsolete`} intro="The savings leave every year of the pathway; the row stays visible with its history. Reinstate undoes a mistake." confirmLabel="Mark obsolete" danger onConfirm={async ({ comment }) => {
+            await markProjectObsolete(p.id, comment)
+            notify({ title: `${p.project_code} marked obsolete`, lines: ['Status: Obsolete. It leaves every year of the pathway; the row stays visible', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />}
       {dialog === 'reapprove' && (
         <ActionDialog
           title={`Send ${p.project_code} for re-approval`}
@@ -297,6 +313,7 @@ export default function ProjectPage() {
           confirmLabel="Start re-approval"
           onConfirm={async ({ comment }) => {
             const newId = await reapproveProject(p.id, comment)
+            notify({ title: `${p.project_code} sent for re-approval`, lines: [`Version ${p.version} is now Obsolete and out of every target figure`, `Version ${p.version + 1} opened in Potential with the same figures; its owner can edit it, then you endorse it`, `Comment: ${comment}`], path: `/projects/${newId}` })
             navigate(`/projects/${newId}`)
           }}
           onClose={() => setDialog(null)}
@@ -310,13 +327,20 @@ export default function ProjectPage() {
           comment={false}
           onConfirm={async () => {
             const newId = await resubmitProject(p.id)
+            notify({ title: `${p.project_code} resubmitted`, lines: [`Version ${p.version + 1} created in Potential, linked to version ${p.version}`, 'Revise it below and save; the ESG lead endorses it from there'], path: `/projects/${newId}/edit` })
             navigate(`/projects/${newId}/edit`)
           }}
           onClose={() => setDialog(null)}
         />
       )}
-      {dialog === 'retire' && <ActionDialog title={`Retire ${p.project_code}`} intro="The project stays visible as Retired and counts in no target figure." confirmLabel="Retire" danger onConfirm={({ comment }) => retireProject(p.id, comment)} onClose={() => setDialog(null)} />}
-      {dialog === 'reinstate' && <ActionDialog title={`Reinstate ${p.project_code}`} intro="The version counts again as Approved. Only possible while no newer version exists." confirmLabel="Reinstate" onConfirm={({ comment }) => reinstateProject(p.id, comment)} onClose={() => setDialog(null)} />}
+      {dialog === 'retire' && <ActionDialog title={`Retire ${p.project_code}`} intro="The project stays visible as Retired and counts in no target figure." confirmLabel="Retire" danger onConfirm={async ({ comment }) => {
+            await retireProject(p.id, comment)
+            notify({ title: `${p.project_code} retired`, lines: ['Status: Retired. It stays visible and counts in no target figure', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />}
+      {dialog === 'reinstate' && <ActionDialog title={`Reinstate ${p.project_code}`} intro="The version counts again as Approved. Only possible while no newer version exists." confirmLabel="Reinstate" onConfirm={async ({ comment }) => {
+            await reinstateProject(p.id, comment)
+            notify({ title: `${p.project_code} reinstated`, lines: ['Status: Approved. It counts again in every year from its start year', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />}
     </div>
   )
 }

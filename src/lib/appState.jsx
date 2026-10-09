@@ -29,6 +29,7 @@ export function AppStateProvider({ children }) {
   const [version, setVersion] = useState(0)
   const [siteSel, setSiteSelState] = useState(() => readSession('siteSel') || 'group')
   const [year, setYearState] = useState(() => Number(readSession('year')) || new Date().getUTCFullYear())
+  const [notice, setNotice] = useState(null) // the confirmation after an action: { title, lines, path }
 
   const refresh = useCallback(async () => {
     try {
@@ -77,8 +78,12 @@ export function AppStateProvider({ children }) {
       loadError,
       version,
       refresh,
+      notice,
+      /** Shows the confirmation of an action; `path` is the page it belongs to (default: the current one, or the page the action navigates to). */
+      notify: (n) => setNotice({ ...n, path: n.path || window.location.pathname, at: Date.now() }),
+      dismissNotice: () => setNotice(null),
     }
-  }, [profile, siteSel, year, years, loaded, loadError, version, refresh])
+  }, [profile, siteSel, year, years, loaded, loadError, version, refresh, notice])
 
   return <AppState.Provider value={value}>{children}</AppState.Provider>
 }

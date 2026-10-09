@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAppState } from '../lib/appState.jsx'
 import { data, siteLabel } from '../lib/data.js'
 import { UNIT_BY_CATEGORY, CATEGORIES, BASE_YEAR, TARGET_YEAR } from '../lib/calculations.js'
+import { fmtInt } from '../lib/format.js'
 import { Card, Eyebrow } from '../components/ui.jsx'
 import { createProject, updateProject } from '../lib/actions.js'
 
@@ -35,7 +36,7 @@ export function validate(form) {
 /** Register a project (new) or edit one while Potential (editing): a site user their own site's, the ESG lead their own group project. */
 export default function NewProject({ editing = false }) {
   const { id } = useParams()
-  const { viewer, isSiteUser, isEsgLead } = useAppState()
+  const { viewer, isSiteUser, isEsgLead, notify } = useAppState()
   const navigate = useNavigate()
   const existing = editing ? data.projects.find((x) => x.id === id) : null
   const [form, setForm] = useState(() => (existing ? fromRow(existing) : { ...EMPTY }))
@@ -97,12 +98,14 @@ export default function NewProject({ editing = false }) {
     try {
       if (editing) {
         await updateProject(existing.id, fields)
+        notify({ title: `${existing.project_code} saved`, lines: [fields.title, `Annual impact: ${fmtInt(fields.annual_impact)} ${unit}, total ${fmtInt(fields.total_impact)}, from ${fields.start_year}`, 'Every changed field is in the history'], path: `/projects/${existing.id}` })
         navigate(`/projects/${existing.id}`)
       } else {
         // Site users register for their own site; the ESG lead registers group projects only (builder decision, 9 Oct 2026).
         // Status Potential, version 1 and the next project code are fixed by the database; the policy refuses anything else.
         const siteId = isSiteUser ? viewer.site_id : null
         const row = await createProject({ ...fields, scope: siteId ? 'site' : 'group', site_id: siteId, status: 'Potential', version: 1 })
+        notify({ title: `${row.project_code} registered`, lines: [fields.title, 'Status: Potential, version 1', `Annual impact: ${fmtInt(fields.annual_impact)} ${unit}, total ${fmtInt(fields.total_impact)}, from ${fields.start_year}`, isSiteUser ? 'The ESG lead endorses it from here; you can edit it until then' : 'Endorse it from the register when it is ready for the committee'], path: `/projects/${row.id}` })
         navigate(`/projects/${row.id}`)
       }
     } catch (err) {

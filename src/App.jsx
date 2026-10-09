@@ -1,8 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth.jsx'
 import { AppStateProvider, useAppState } from './lib/appState.jsx'
 import { Header } from './components/Header.jsx'
 import { HatchDefs } from './components/ui.jsx'
+import { Notice } from './components/Notice.jsx'
 import Login from './screens/Login.jsx'
 import Overview from './screens/Overview.jsx'
 import Register from './screens/Register.jsx'
@@ -12,11 +14,16 @@ import ReferenceData from './screens/ReferenceData.jsx'
 import Users from './screens/Users.jsx'
 
 function Shell() {
-  const { isEsgLead, canRegister, loaded, loadError, refresh } = useAppState()
+  const { isEsgLead, canRegister, loaded, loadError, refresh, notice, dismissNotice } = useAppState()
+  const location = useLocation()
+  useEffect(() => {
+    if (notice && notice.path !== location.pathname) dismissNotice()
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="min-h-screen flex flex-col">
       <HatchDefs />
       <Header />
+      {notice && <Notice notice={notice} onClose={dismissNotice} />}
       <main className="w-full max-w-[1200px] mx-auto px-4 py-5 flex-1">
         {!loaded ? (
           <p className="rb-caption">Loading…</p>

@@ -10,7 +10,7 @@ const ANONYMISED = 'retired user'
 
 /** ESG lead only (the route and the policies enforce it). Create, change and retire go through the admin function; anonymise through its narrow function. */
 export default function Users() {
-  const { viewer, version } = useAppState()
+  const { viewer, version, notify } = useAppState()
   const [dialog, setDialog] = useState(null) // { kind: 'add' | 'change' | 'retire' | 'anonymise', user }
   const users = [...data.profiles].sort((a, b) => (a.retired_at ? 1 : 0) - (b.retired_at ? 1 : 0) || a.name.localeCompare(b.name))
   void version
@@ -109,7 +109,10 @@ export default function Users() {
           intro={`A login identity is created for ${dialog.user.email} (no password: they request a magic link on the login screen). Name, role and site stay as they are.`}
           confirmLabel="Create login"
           comment={false}
-          onConfirm={() => adminUsers('create', { name: dialog.user.name, email: dialog.user.email, role: dialog.user.role, site_id: dialog.user.site_id || null })}
+          onConfirm={async () => {
+            await adminUsers('create', { name: dialog.user.name, email: dialog.user.email, role: dialog.user.role, site_id: dialog.user.site_id || null })
+            notify({ title: `Login created for ${dialog.user.name}`, lines: [dialog.user.email, 'They enter this address on the login page and open the link they receive'] })
+          }}
           onClose={() => setDialog(null)}
         />
       )}
@@ -119,7 +122,10 @@ export default function Users() {
           intro="Their next login is refused at once; their name stays on every project, decision and history row they touched."
           confirmLabel="Retire"
           danger
-          onConfirm={({ comment }) => adminUsers('retire', { id: dialog.user.id, comment })}
+          onConfirm={async ({ comment }) => {
+            await adminUsers('retire', { id: dialog.user.id, comment })
+            notify({ title: `${dialog.user.name} retired`, lines: [`Comment: ${comment}`, 'Their next login is refused; their name stays on every record they touched'] })
+          }}
           onClose={() => setDialog(null)}
         />
       )}
@@ -130,7 +136,10 @@ export default function Users() {
           confirmLabel="Anonymise"
           comment={false}
           danger
-          onConfirm={() => anonymisePerson(dialog.user.id, dialog.user.name)}
+          onConfirm={async () => {
+            const n = await anonymisePerson(dialog.user.id, dialog.user.name)
+            notify({ title: `${dialog.user.name} anonymised`, lines: [`${n} row${n === 1 ? '' : 's'} changed: the profile, the owner names and the attendee mentions now read "retired user"`, 'Next: the platform owner deletes the login identity in the Supabase dashboard'] })
+          }}
           onClose={() => setDialog(null)}
         />
       )}
@@ -140,6 +149,7 @@ export default function Users() {
 
 /** Add (no `user`) or change role and site (`user`). The admin function validates every input again and refuses the caller's own row. */
 function UserDialog({ user, onClose }) {
+  const { notify } = useAppState()
   const [values, setValues] = useState({ name: user?.name || '', email: user?.email || '', role: user?.role || 'site_user', site_id: user?.site_id || '' })
   const [state, setState] = useState({ status: 'idle' })
   const set = (k) => (e) => setValues((v) => ({ ...v, [k]: e.target.value }))
@@ -152,8 +162,14 @@ function UserDialog({ user, onClose }) {
     if (values.role === 'site_user' && !siteId) return setState({ status: 'error', message: 'A site user needs a site.' })
     setState({ status: 'working' })
     try {
-      if (user) await adminUsers('update', { id: user.id, role: values.role, site_id: siteId })
-      else await adminUsers('create', { name: values.name.trim(), email: values.email.trim().toLowerCase(), role: values.role, site_id: siteId })
+      const siteLine = values.role === 'site_user' ? `Site: ${siteLabel(siteId)}` : null
+      if (user) {
+        await adminUsers('update', { id: user.id, role: values.role, site_id: siteId })
+        notify({ title: `${user.name} changed`, lines: [`Role: ${ROLE_LABEL[values.role]}`, siteLine, 'Applies at their next login'] })
+      } else {
+        await adminUsers('create', { name: values.name.trim(), email: values.email.trim().toLowerCase(), role: values.role, site_id: siteId })
+        notify({ title: `${values.name.trim()} added`, lines: [values.email.trim().toLowerCase(), `Role: ${ROLE_LABEL[values.role]}`, siteLine, 'Login identity created: they enter their address on the login page and open the link they receive'] })
+      }
       onClose()
     } catch (err) {
       setState({ status: 'error', message: err.message || String(err) })

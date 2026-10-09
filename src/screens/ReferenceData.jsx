@@ -269,6 +269,7 @@ const figuresOf = (row) => Object.fromEntries(FIGURE_FIELDS.map(([k]) => [k, row
 
 /** One row per site, year and kind: pick year and kind, the existing values load, save inserts or updates. */
 function FigureDialog({ site, rows, onClose }) {
+  const { notify } = useAppState()
   const [year, setYear] = useState(String(new Date().getUTCFullYear() - 1))
   const [kind, setKind] = useState('actual')
   const existing = rows.find((r) => String(r.year) === year && r.kind === kind) || null
@@ -300,6 +301,10 @@ function FigureDialog({ site, rows, onClose }) {
     setState({ status: 'working' })
     try {
       await saveReferenceFigure(existing?.id, existing ? figures : { site_id: site.id, year: y, kind, ...figures })
+      notify({
+        title: `${existing ? 'Figures updated' : 'Figures entered'} for ${site.code} ${site.name}, ${y} ${kind}`,
+        lines: [...FIGURE_FIELDS.filter(([k]) => figures[k] != null).map(([k, label, unit]) => `${label}: ${fmtInt(figures[k])} ${unit}`), 'Logged with your name and the time; the Overview recalculates at once'],
+      })
       onClose()
     } catch (err) {
       setState({ status: 'error', message: err.message || String(err) })
@@ -351,69 +356,127 @@ function FigureDialog({ site, rows, onClose }) {
 }
 
 function TargetDialog({ target, onClose }) {
-  const [values, setValues] = useState({ value: String(target.value), base_year: String(target.base_year), target_year: String(target.target_year), active: target.active !== false, comment: '' })
+  const { notify } = useAppState()
+  const [values, setValuesState] = useState({ value: String(target.value), base_year: String(target.base_year), target_year: String(target.target_year), active: target.active !== false, comment: '' })
   const [state, setState] = useState({ status: 'idle' })
-  const changed = Number(values.value) !== Number(target.value) || Number(values.base_year) !== Number(target.base_year) || Number(values.target_year) !== Number(target.target_year) || values.active !== (target.active !== false)
-  const submit = async (e) => {
-    e.preventDefault()
+  const [step, setStep] = useState('form') // form → warning (the pop-up) → acknowledged (the button must be clicked again)
+  const setValues = (patch) => {
+    setValuesState((v) => ({ ...v, ...patch }))
+    if (step === 'acknowledged') setStep('form') // anything edited after the warning brings the warning back
+  }
+  const label = TARGET_LABEL[target.category] || target.category
+  const fmtTarget = (v) => (target.category === 'waste_diversion' ? `at least ${fmtNum(v, 0)} %` : `${fmtNum(v, 0)} % reduction`)
+  const changes = []
+  if (Number(values.value) !== Number(target.value)) changes.push(`Value: ${fmtTarget(target.value)} to ${fmtTarget(values.value)}`)
+  if (Number(values.base_year) !== Number(target.base_year)) changes.push(`Base year: ${target.base_year} to ${values.base_year}`)
+  if (Number(values.target_year) !== Number(target.target_year)) changes.push(`Target year: ${target.target_year} to ${values.target_year}`)
+  if (values.active !== (target.active !== false)) changes.push(values.active ? 'Reactivated' : 'Deactivated')
+  const validate = () => {
     const value = Number(values.value)
     const base = Number(values.base_year)
     const ty = Number(values.target_year)
-    if (Number.isNaN(value) || value <= 0 || value > 100) return setState({ status: 'error', message: 'The value is a percentage above 0 and at most 100.' })
-    if (!Number.isInteger(base) || !Number.isInteger(ty) || base < 2000 || ty > 2100 || ty <= base) return setState({ status: 'error', message: 'The target year must come after the base year (2000 to 2100).' })
-    if (!changed) return setState({ status: 'error', message: 'Nothing changed.' })
-    if (!values.comment.trim()) return setState({ status: 'error', message: 'Give the reason for this change; it is recorded with your name and the time.' })
+    if (Number.isNaN(value) || value <= 0 || value > 100) return 'The value is a percentage above 0 and at most 100.'
+    if (!Number.isInteger(base) || !Number.isInteger(ty) || base < 2000 || ty > 2100 || ty <= base) return 'The target year must come after the base year (2000 to 2100).'
+    if (changes.length === 0) return 'Nothing changed.'
+    if (!values.comment.trim()) return 'Give the reason for this change; it is recorded with your name and the time.'
+    return null
+  }
+  const submit = async (e) => {
+    e.preventDefault()
+    const problem = validate()
+    if (problem) return setState({ status: 'error', message: problem })
+    if (step !== 'acknowledged') {
+      setState({ status: 'idle' })
+      return setStep('warning')
+    }
     setState({ status: 'working' })
     try {
-      await updateTarget(target.id, { value, base_year: base, target_year: ty, active: values.active, change_comment: values.comment.trim() })
+      await updateTarget(target.id, { value: Number(values.value), base_year: Number(values.base_year), target_year: Number(values.target_year), active: values.active, change_comment: values.comment.trim() })
+      notify({ title: `Target changed: ${label}`, lines: [...changes, `Reason: ${values.comment.trim()}`, 'Applies to every site and the group at once; recorded with your name and the time'] })
       onClose()
     } catch (err) {
       setState({ status: 'error', message: err.message || String(err) })
     }
   }
-  return (
-    <Modal title={TARGET_LABEL[target.category] || target.category} onClose={onClose}>
-      <form onSubmit={submit} className="space-y-3">
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="rb-label" htmlFor="t-value">
-              {target.category === 'waste_diversion' ? 'Diversion rate (%)' : 'Reduction (%)'}
-            </label>
-            <input id="t-value" type="number" min="0" max="100" step="any" className="rb-input" value={values.value} onChange={(e) => setValues((v) => ({ ...v, value: e.target.value }))} autoFocus />
-          </div>
-          <div>
-            <label className="rb-label" htmlFor="t-base">
-              Base year
-            </label>
-            <input id="t-base" type="number" step="1" className="rb-input" value={values.base_year} onChange={(e) => setValues((v) => ({ ...v, base_year: e.target.value }))} />
-          </div>
-          <div>
-            <label className="rb-label" htmlFor="t-year">
-              Target year
-            </label>
-            <input id="t-year" type="number" step="1" className="rb-input" value={values.target_year} onChange={(e) => setValues((v) => ({ ...v, target_year: e.target.value }))} />
-          </div>
-        </div>
-        <label className="flex items-center gap-2 text-[14px]">
-          <input type="checkbox" checked={values.active} onChange={(e) => setValues((v) => ({ ...v, active: e.target.checked }))} />
-          Active
-        </label>
+
+  if (step === 'warning')
+    return (
+      <Modal title="Before you change this target" onClose={onClose}>
         <div className="rb-card p-3 border-l-4 border-l-rb-attention" role="alert">
           <div className="flex items-center gap-2 font-semibold">
             <span className="rb-dot rb-dot--attention" aria-hidden="true" />
             This changes the target for the whole organisation
           </div>
           <p className="text-[13px] mt-1">
-            Every site is measured against it: the required reductions, the uncovered gaps, the pathways and the review pack change at once, for every year. The change is recorded with your name, the time and the reason below.
+            Every site is measured against it: the required reductions, the uncovered gaps, the pathways and the review pack change at once, for every year. The change is recorded with your name, the time and your reason.
           </p>
         </div>
+        <dl className="text-[13px] my-3 space-y-1">
+          <div>
+            <dt className="rb-caption text-[12px]">Target</dt>
+            <dd className="font-semibold">{label}</dd>
+          </div>
+          <div>
+            <dt className="rb-caption text-[12px]">What changes</dt>
+            <dd className="font-semibold">{changes.join(' · ')}</dd>
+          </div>
+          <div>
+            <dt className="rb-caption text-[12px]">Reason</dt>
+            <dd>{values.comment.trim()}</dd>
+          </div>
+        </dl>
+        <p className="rb-caption text-[12px] mb-3">Nothing is saved yet. After "I understand" you are back on the form: click "Change the target" once more to apply it.</p>
+        <div className="flex gap-2">
+          <button type="button" className="rb-btn rb-btn--primary" onClick={() => setStep('acknowledged')} autoFocus>
+            I understand
+          </button>
+          <button type="button" className="rb-btn" onClick={() => setStep('form')}>
+            Back
+          </button>
+        </div>
+      </Modal>
+    )
+
+  return (
+    <Modal title={label} onClose={onClose}>
+      <form onSubmit={submit} className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className="rb-label" htmlFor="t-value">
+              {target.category === 'waste_diversion' ? 'Diversion rate (%)' : 'Reduction (%)'}
+            </label>
+            <input id="t-value" type="number" min="0" max="100" step="any" className="rb-input" value={values.value} onChange={(e) => setValues({ value: e.target.value })} autoFocus />
+          </div>
+          <div>
+            <label className="rb-label" htmlFor="t-base">
+              Base year
+            </label>
+            <input id="t-base" type="number" step="1" className="rb-input" value={values.base_year} onChange={(e) => setValues({ base_year: e.target.value })} />
+          </div>
+          <div>
+            <label className="rb-label" htmlFor="t-year">
+              Target year
+            </label>
+            <input id="t-year" type="number" step="1" className="rb-input" value={values.target_year} onChange={(e) => setValues({ target_year: e.target.value })} />
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-[14px]">
+          <input type="checkbox" checked={values.active} onChange={(e) => setValues({ active: e.target.checked })} />
+          Active
+        </label>
         <div>
           <label className="rb-label" htmlFor="t-comment">
             Reason for the change
           </label>
-          <textarea id="t-comment" className="rb-textarea" rows={3} value={values.comment} onChange={(e) => setValues((v) => ({ ...v, comment: e.target.value }))} placeholder="Who decided it, when, and why" />
+          <textarea id="t-comment" className="rb-textarea" rows={3} value={values.comment} onChange={(e) => setValues({ comment: e.target.value })} placeholder="Who decided it, when, and why" />
         </div>
-        <p className="rb-caption text-[12px]">The calculations use FY2024 and 2030 (spec §9); the years here are the record of the target as set.</p>
+        <p className="rb-caption text-[12px]">A target applies to every site and the group. The calculations use FY2024 and 2030 (spec §9); the years here are the record of the target as set.</p>
+        {step === 'acknowledged' && (
+          <p className="rb-warning flex items-center gap-2">
+            <span className="rb-dot rb-dot--attention" aria-hidden="true" />
+            Warning acknowledged. Click "Change the target" once more to apply it.
+          </p>
+        )}
         {state.status === 'error' && <div className="rb-error">{state.message}</div>}
         <div className="flex gap-2 pt-1">
           <button type="submit" className="rb-btn rb-btn--primary" disabled={state.status === 'working'}>
@@ -429,6 +492,7 @@ function TargetDialog({ target, onClose }) {
 }
 
 function SiteDialog({ site, onClose }) {
+  const { notify } = useAppState()
   const [values, setValues] = useState({ code: site?.code || '', name: site?.name || '', city: site?.city || '', type: site?.type || '', active: site ? site.active !== false : true })
   const [state, setState] = useState({ status: 'idle' })
   const set = (k) => (e) => setValues((v) => ({ ...v, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
@@ -440,6 +504,7 @@ function SiteDialog({ site, onClose }) {
     try {
       const fields = { name: values.name.trim(), city: values.city.trim(), type: values.type.trim(), active: values.active }
       await saveSite(site?.id, site ? fields : { code: values.code, ...fields })
+      notify({ title: site ? `Site ${site.code} saved` : `Site ${values.code} added`, lines: [`${fields.name}, ${fields.city}, ${fields.type}`, fields.active ? 'Active: offered in the forms' : 'Inactive: no longer offered in the forms; its old projects keep it'] })
       onClose()
     } catch (err) {
       setState({ status: 'error', message: err.message || String(err) })

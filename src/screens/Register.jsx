@@ -22,7 +22,7 @@ const COLUMNS = [
 ]
 
 export default function Register() {
-  const { siteId, siteSel, setSiteSel, canChooseSite, year, setYear, years, isEsgLead, canRegister, version } = useAppState()
+  const { siteId, siteSel, setSiteSel, canChooseSite, year, setYear, years, isEsgLead, canRegister, version, notify } = useAppState()
   const navigate = useNavigate()
   const [category, setCategory] = useState('all')
   const [status, setStatus] = useState('all')
@@ -223,10 +223,16 @@ export default function Register() {
       {isEsgLead && year !== currentYear && <p className="rb-caption text-[12px]">Row actions apply to the current year; switch the reporting year to {currentYear} to act.</p>}
       {csv && <ExportCsvDialog onClose={() => setCsv(false)} filters={filters} rows={rows} />}
       {dialog?.kind === 'endorse' && (
-        <ActionDialog title={`Endorse ${dialog.project.project_code}`} intro={`${dialog.project.title} goes to the committee as Pending approval.`} confirmLabel="Endorse" onConfirm={({ comment }) => endorseProject(dialog.project.id, comment)} onClose={() => setDialog(null)} />
+        <ActionDialog title={`Endorse ${dialog.project.project_code}`} intro={`${dialog.project.title} goes to the committee as Pending approval.`} confirmLabel="Endorse" onConfirm={async ({ comment }) => {
+            await endorseProject(dialog.project.id, comment)
+            notify({ title: `${dialog.project.project_code} endorsed`, lines: [dialog.project.title, 'Status: Pending approval, now with the committee', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === 'decline' && (
-        <ActionDialog title={`Decline ${dialog.project.project_code}`} intro={`${dialog.project.title} is declined; the site can resubmit a new version or retire it.`} confirmLabel="Decline" danger onConfirm={({ comment }) => declineProject(dialog.project.id, comment)} onClose={() => setDialog(null)} />
+        <ActionDialog title={`Decline ${dialog.project.project_code}`} intro={`${dialog.project.title} is declined; the site can resubmit a new version or retire it.`} confirmLabel="Decline" danger onConfirm={async ({ comment }) => {
+            await declineProject(dialog.project.id, comment)
+            notify({ title: `${dialog.project.project_code} declined`, lines: [dialog.project.title, 'Status: Declined. Its owner can resubmit a new version or retire it', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === 'record' && (
         <ActionDialog
@@ -249,7 +255,10 @@ export default function Register() {
               </div>
             ),
           }}
-          onConfirm={({ comment, attendees, decision_date }) => recordCommitteeDecision(dialog.project.id, outcome, comment, attendees, decision_date)}
+          onConfirm={async ({ comment, attendees, decision_date }) => {
+            await recordCommitteeDecision(dialog.project.id, outcome, comment, attendees, decision_date)
+            notify({ title: `Committee decision recorded for ${dialog.project.project_code}`, lines: [dialog.project.title, `Outcome: ${outcome}`, `Decision date: ${fmtDate(decision_date)}`, `People in the room: ${attendees}`, `Comment: ${comment}`] })
+          }}
           onClose={() => setDialog(null)}
         />
       )}

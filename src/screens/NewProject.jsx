@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAppState } from '../lib/appState.jsx'
 import { data, siteLabel } from '../lib/data.js'
 import { UNIT_BY_CATEGORY, CATEGORIES, BASE_YEAR, TARGET_YEAR } from '../lib/calculations.js'
-import { fmtInt, fmtEur } from '../lib/format.js'
 import { Card, Eyebrow } from '../components/ui.jsx'
+import { createProject, updateProject } from '../lib/actions.js'
 
 const EMPTY = { title: '', category: '', description: '', total_impact: '', annual_impact: '', start_year: '', capex_eur: '', opex_eur_per_year: '', owner_name: '' }
+const fromRow = (p) => Object.fromEntries(Object.keys(EMPTY).map((k) => [k, p[k] === null || p[k] === undefined ? '' : String(p[k])]))
 
 export function validate(form) {
   const errors = {}
@@ -31,22 +32,40 @@ export function validate(form) {
   return { errors, warnings, valid: Object.keys(errors).length === 0 }
 }
 
-export default function NewProject() {
-  const { viewer, isSiteUser } = useAppState()
+/** Register a project (new) or edit one while Potential (editing): a site user their own site's, the ESG lead their own group project. */
+export default function NewProject({ editing = false }) {
+  const { id } = useParams()
+  const { viewer, isSiteUser, isEsgLead } = useAppState()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ ...EMPTY })
+  const existing = editing ? data.projects.find((x) => x.id === id) : null
+  const [form, setForm] = useState(() => (existing ? fromRow(existing) : { ...EMPTY }))
   const [touched, setTouched] = useState({})
-  const [preview, setPreview] = useState(null)
+  const [save, setSave] = useState({ status: 'idle' })
   const { errors, warnings, valid } = useMemo(() => validate(form), [form])
   const unit = form.category ? UNIT_BY_CATEGORY[form.category] : '–'
-  const nextCode = useMemo(() => {
-    const max = data.projects.reduce((m, p) => Math.max(m, Number(p.project_code.replace('PRJ-', '')) || 0), 0)
-    return `PRJ-${String(max + 1).padStart(4, '0')}`
-  }, [])
+
+  if (editing) {
+    if (!existing) return <p>Project not found.</p>
+    const own = isSiteUser ? existing.site_id === viewer.site_id : isEsgLead ? existing.scope === 'group' : false
+    if (existing.status !== 'Potential' || !own)
+      return (
+        <div className="space-y-3 max-w-prose">
+          <p className="font-semibold">{existing.project_code} cannot be edited here.</p>
+          <p className="text-[14px]">
+            {existing.status !== 'Potential'
+              ? `A project is edited only while Potential; this version is ${existing.status}.${existing.status === 'Pending approval' && isEsgLead ? ' The figures are corrected on the project page, with a comment.' : ''}`
+              : 'Only its owner edits it: the site for a site project, the ESG lead for a group project.'}
+          </p>
+          <Link to={`/projects/${existing.id}`} className="rb-btn no-underline">
+            Back to the project
+          </Link>
+        </div>
+      )
+  }
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const blur = (k) => () => setTouched((t) => ({ ...t, [k]: true }))
-  const show = (k) => touched[k] || preview !== null || touched._all
+  const show = (k) => touched[k] || touched._all
   const field = (k, label, input, hint) => (
     <div>
       <label className="rb-label" htmlFor={k}>
@@ -58,21 +77,47 @@ export default function NewProject() {
       {show(k) && !errors[k] && warnings[k] && <div className="rb-warning">{warnings[k]}</div>}
     </div>
   )
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
     setTouched({ _all: true })
     if (!valid) return
-    // Site users register for their own site; the ESG lead registers group projects only (builder decision, 9 Oct 2026).
-    const siteId = isSiteUser ? viewer.site_id : null
-    setPreview({ ...form, site_id: siteId, scope: siteId ? 'site' : 'group', unit, project_code: nextCode })
+    const fields = {
+      title: form.title.trim(),
+      category: form.category,
+      description: form.description.trim(),
+      total_impact: Number(form.total_impact),
+      annual_impact: Number(form.annual_impact),
+      unit,
+      start_year: Number(form.start_year),
+      capex_eur: Number(form.capex_eur),
+      opex_eur_per_year: Number(form.opex_eur_per_year),
+      owner_name: form.owner_name.trim(),
+    }
+    setSave({ status: 'working' })
+    try {
+      if (editing) {
+        await updateProject(existing.id, fields)
+        navigate(`/projects/${existing.id}`)
+      } else {
+        // Site users register for their own site; the ESG lead registers group projects only (builder decision, 9 Oct 2026).
+        // Status Potential, version 1 and the next project code are fixed by the database; the policy refuses anything else.
+        const siteId = isSiteUser ? viewer.site_id : null
+        const row = await createProject({ ...fields, scope: siteId ? 'site' : 'group', site_id: siteId, status: 'Potential', version: 1 })
+        navigate(`/projects/${row.id}`)
+      }
+    } catch (err) {
+      setSave({ status: 'error', message: err.message || String(err) })
+    }
   }
 
+  const siteText = isSiteUser ? siteLabel(viewer.site_id) : 'Group project'
   return (
     <div className="space-y-4 max-w-[860px]">
       <div>
-        <Eyebrow>{isSiteUser ? siteLabel(viewer.site_id) : 'Group project'}</Eyebrow>
-        <h1 className="mt-0.5">Register a project</h1>
+        <Eyebrow>{editing ? `${existing.project_code} · version ${existing.version} · ${existing.scope === 'site' ? siteLabel(existing.site_id) : 'Group project'}` : siteText}</Eyebrow>
+        <h1 className="mt-0.5">{editing ? 'Edit the project' : 'Register a project'}</h1>
         <div className="rb-rule mt-1.5" />
+        {editing && <p className="rb-caption text-[13px] mt-1">Editable while Potential. Every changed field is logged with old and new value.</p>}
       </div>
       <form onSubmit={onSubmit} noValidate>
         <Card className="space-y-4">
@@ -88,9 +133,11 @@ export default function NewProject() {
                 ))}
               </select>,
             )}
-            {isSiteUser
-              ? field('site', 'Site', <input id="site" className="rb-input" value={siteLabel(viewer.site_id)} readOnly />, 'Fixed to your site.')
-              : field('site', 'Site', <input id="site" className="rb-input" value="Group (not tied to a site)" readOnly />, 'The ESG lead registers group projects only; each site registers its own. Group projects count for the group only.')}
+            {editing
+              ? field('site', 'Site', <input id="site" className="rb-input" value={existing.scope === 'site' ? siteLabel(existing.site_id) : 'Group (not tied to a site)'} readOnly />, 'Site and scope never change.')
+              : isSiteUser
+                ? field('site', 'Site', <input id="site" className="rb-input" value={siteLabel(viewer.site_id)} readOnly />, 'Fixed to your site.')
+                : field('site', 'Site', <input id="site" className="rb-input" value="Group (not tied to a site)" readOnly />, 'The ESG lead registers group projects only; each site registers its own. Group projects count for the group only.')}
             {field('unit', 'Unit', <input id="unit" className="rb-input" value={unit} readOnly />, 'Set by the category.')}
           </div>
           {field('description', 'Description', <textarea id="description" className="rb-textarea" rows={4} value={form.description} onChange={set('description')} onBlur={blur('description')} aria-invalid={show('description') && !!errors.description} />, 'What the project is and how it delivers the impact.')}
@@ -104,51 +151,19 @@ export default function NewProject() {
             {field('opex_eur_per_year', 'Opex (EUR per year)', <input id="opex_eur_per_year" type="number" step="any" className="rb-input" value={form.opex_eur_per_year} onChange={set('opex_eur_per_year')} onBlur={blur('opex_eur_per_year')} aria-invalid={show('opex_eur_per_year') && !!errors.opex_eur_per_year} />, 'Negative for a saving.')}
             {field('owner_name', 'Owner name', <input id="owner_name" className="rb-input" value={form.owner_name} onChange={set('owner_name')} onBlur={blur('owner_name')} aria-invalid={show('owner_name') && !!errors.owner_name} />, 'The project owner at the site.')}
           </div>
-          <div className="flex flex-wrap gap-2 pt-2">
-            <button type="submit" className="rb-btn rb-btn--primary">
-              Submit
+          {save.status === 'error' && <div className="rb-error">{save.message}</div>}
+          {touched._all && !valid && save.status !== 'error' && <div className="rb-error">Please correct the fields marked above.</div>}
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <button type="submit" className="rb-btn rb-btn--primary" disabled={save.status === 'working'}>
+              {save.status === 'working' ? 'Saving…' : editing ? 'Save changes' : 'Submit'}
             </button>
-            <button type="button" className="rb-btn" onClick={() => navigate(-1)}>
+            <button type="button" className="rb-btn" onClick={() => navigate(editing ? `/projects/${existing.id}` : '/projects')}>
               Cancel
             </button>
+            {!editing && <span className="rb-caption text-[12px]">Saved as Potential, version 1, with the next sequential project ID.</span>}
           </div>
         </Card>
       </form>
-
-      {preview && (
-        <Card className="border-l-4 border-l-rb-attention">
-          <h3>Nothing is saved yet</h3>
-          <p className="text-[14px] mt-1">
-            Saving comes with the access phase, together with the login. The form is valid: it would be registered as <strong>{preview.project_code}</strong>, status Potential, version 1, and the Project page would open.
-          </p>
-          <dl className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-[13px] mt-3">
-            <Item k="Title" v={preview.title} />
-            <Item k="Category" v={preview.category} />
-            <Item k="Scope" v={preview.scope} />
-            <Item k="Site" v={siteLabel(preview.site_id)} />
-            <Item k="Annual impact" v={`${fmtInt(preview.annual_impact)} ${preview.unit}`} />
-            <Item k="Total impact" v={fmtInt(preview.total_impact)} />
-            <Item k="Start year" v={preview.start_year} />
-            <Item k="Capex" v={fmtEur(preview.capex_eur)} />
-            <Item k="Opex per year" v={fmtEur(preview.opex_eur_per_year)} />
-            <Item k="Owner" v={preview.owner_name} />
-          </dl>
-          <div className="mt-3">
-            <Link to="/projects" className="rb-btn rb-btn--small no-underline">
-              Back to the register
-            </Link>
-          </div>
-        </Card>
-      )}
-    </div>
-  )
-}
-
-function Item({ k, v }) {
-  return (
-    <div>
-      <dt className="rb-caption text-[12px]">{k}</dt>
-      <dd className="font-semibold">{v}</dd>
     </div>
   )
 }

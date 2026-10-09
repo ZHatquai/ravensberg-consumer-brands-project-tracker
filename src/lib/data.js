@@ -1,19 +1,50 @@
-// FIXTURE DATA. Every screen reads these local JSON files, shaped exactly like the database tables, and reads no table.
-// The switch to the real rows happens in the access phase, together with the login and the row rules (CLAUDE.md).
-import sites from '../fixtures/sites.json'
-import profiles from '../fixtures/profiles.json'
-import targets from '../fixtures/targets.json'
-import referenceFigures from '../fixtures/reference_figures.json'
-import projects from '../fixtures/projects.json'
-import decisions from '../fixtures/decisions.json'
-import history from '../fixtures/project_history.json'
+// The rows the signed-in person may read, loaded from Supabase into one store shaped exactly like the fixture files were.
+// RLS decides which rows come back: a site user receives their site, the CFO and the ESG lead everything. The screens,
+// the calculations, the CSV and the review pack read this store; `reload()` refreshes it after every action.
+import { getSupabase } from './supabase.js'
 import { indexBy } from './calculations.js'
 
-export const data = { sites, profiles, targets, referenceFigures, projects, decisions, history }
-export const siteById = indexBy(sites)
-export const profileById = indexBy(profiles)
-export const targetByCategory = indexBy(targets, 'category')
-export const sitesSorted = [...sites].sort((a, b) => a.code.localeCompare(b.code))
+export const data = { sites: [], profiles: [], targets: [], referenceFigures: [], referenceFiguresHistory: [], projects: [], decisions: [], history: [] }
+export const siteById = {}
+export const profileById = {}
+export const targetByCategory = {}
+export const sitesSorted = []
+
+const TABLES = [
+  ['sites', 'sites', 'code'],
+  ['profiles', 'profiles', 'name'],
+  ['targets', 'targets', 'category'],
+  ['reference_figures', 'referenceFigures', 'year'],
+  ['reference_figures_history', 'referenceFiguresHistory', 'changed_at'],
+  ['projects', 'projects', 'created_at'],
+  ['decisions', 'decisions', 'decision_date'],
+  ['project_history', 'history', 'changed_at'],
+]
+
+function refill(target, rows) {
+  target.length = 0
+  for (const r of rows) target.push(r)
+}
+function reindex(target, rows, key = 'id') {
+  for (const k of Object.keys(target)) delete target[k]
+  Object.assign(target, indexBy(rows, key))
+}
+
+/** Loads every table the caller may read. Throws with the first error; nothing is half-loaded on failure. */
+export async function reload() {
+  const sb = getSupabase()
+  const results = await Promise.all(
+    TABLES.map(([table, , order]) => sb.from(table).select('*').order(order, { ascending: true }).limit(5000)),
+  )
+  const failed = results.find((r) => r.error)
+  if (failed) throw failed.error
+  TABLES.forEach(([, key], i) => refill(data[key], results[i].data || []))
+  reindex(siteById, data.sites)
+  reindex(profileById, data.profiles)
+  reindex(targetByCategory, data.targets, 'category')
+  refill(sitesSorted, [...data.sites].sort((a, b) => a.code.localeCompare(b.code)))
+  return data
+}
 
 export function siteLabel(siteId) {
   const s = siteById[siteId]

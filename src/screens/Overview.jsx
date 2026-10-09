@@ -14,8 +14,8 @@ import { ExportCsvDialog } from '../components/ExportCsvDialog.jsx'
 import { ReviewPackDialog } from '../components/ReviewPackDialog.jsx'
 
 export default function Overview() {
-  const { siteId, year, canRegister, canExportPdf } = useAppState()
-  const o = useMemo(() => overview(data, { siteId, year }), [siteId, year])
+  const { siteId, year, canRegister, canExportPdf, version } = useAppState()
+  const o = useMemo(() => overview(data, { siteId, year }), [siteId, year, version]) // eslint-disable-line react-hooks/exhaustive-deps
   const [tab, setTab] = useState('emissions')
   const [dialog, setDialog] = useState(null)
   const scopeLabel = siteId ? siteLabel(siteId) : 'Group, all seven sites'

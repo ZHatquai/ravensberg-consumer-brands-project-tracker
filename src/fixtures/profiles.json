@@ -1,0 +1,122 @@
+[
+  {
+    "id": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "auth_user_id": null,
+    "email": "z.hatquai@sustainos.io",
+    "name": "Zyad Hatquai",
+    "role": "esg_lead",
+    "site_id": null,
+    "retired_at": null,
+    "created_at": "2025-01-06T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-01-06T08:30:00+00:00"
+  },
+  {
+    "id": "7bf5f541-e23e-5038-bcb1-a128543194cf",
+    "auth_user_id": null,
+    "email": "sustainatrend@gmail.com",
+    "name": "Sam",
+    "role": "cfo",
+    "site_id": null,
+    "retired_at": null,
+    "created_at": "2025-01-06T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-01-06T08:30:00+00:00"
+  },
+  {
+    "id": "d6296b95-d583-5c40-ae28-f489f2795f7d",
+    "auth_user_id": null,
+    "email": "z.hatquai@gmail.com",
+    "name": "Zee",
+    "role": "site_user",
+    "site_id": "39f1afaf-bec9-56b0-9929-05b48b497d81",
+    "retired_at": null,
+    "created_at": "2025-01-13T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-01-13T08:30:00+00:00"
+  },
+  {
+    "id": "e10eb550-21fc-58c5-82ed-d7abd6a4d03d",
+    "auth_user_id": null,
+    "email": "anke.rieger@ravensberg-cb.example",
+    "name": "Anke Rieger",
+    "role": "site_user",
+    "site_id": "57c5fcdc-308f-5632-b5fa-ae721b8c3812",
+    "retired_at": null,
+    "created_at": "2025-01-13T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-01-13T08:30:00+00:00"
+  },
+  {
+    "id": "caa6b15f-230c-53dd-84ac-625267e300b0",
+    "auth_user_id": null,
+    "email": "tobias.wendt@ravensberg-cb.example",
+    "name": "Tobias Wendt",
+    "role": "site_user",
+    "site_id": "5fcc9448-7520-53b1-a2d7-27feea07b62c",
+    "retired_at": null,
+    "created_at": "2025-01-13T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-01-13T08:30:00+00:00"
+  },
+  {
+    "id": "e5c37ab3-e5ba-5720-b85f-350e2129ffa8",
+    "auth_user_id": null,
+    "email": "miriam.koch@ravensberg-cb.example",
+    "name": "Miriam Koch",
+    "role": "site_user",
+    "site_id": "2fcda861-8dde-549a-80ea-1c0442523ee0",
+    "retired_at": null,
+    "created_at": "2025-01-13T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-01-13T08:30:00+00:00"
+  },
+  {
+    "id": "4c64907b-ad32-55dd-88aa-479fefcc9154",
+    "auth_user_id": null,
+    "email": "lars.brinkmann@ravensberg-cb.example",
+    "name": "Lars Brinkmann",
+    "role": "site_user",
+    "site_id": "da9ce7b9-fd3d-5ed4-a7a0-b2c27425b0df",
+    "retired_at": null,
+    "created_at": "2025-01-20T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-01-20T08:30:00+00:00"
+  },
+  {
+    "id": "1dd238dd-1e6d-5e42-a7ac-6d1885f84046",
+    "auth_user_id": null,
+    "email": "petra.hollmann@ravensberg-cb.example",
+    "name": "Petra Hollmann",
+    "role": "site_user",
+    "site_id": "4150a9c6-4651-5044-9d75-2ad701c065e8",
+    "retired_at": null,
+    "created_at": "2025-01-20T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-01-20T08:30:00+00:00"
+  },
+  {
+    "id": "c833cbec-fe77-5650-9673-cc9be2fbf2ad",
+    "auth_user_id": null,
+    "email": "jonas.feldmann@ravensberg-cb.example",
+    "name": "Jonas Feldmann",
+    "role": "site_user",
+    "site_id": "8241ef32-ec9e-5ed2-945f-45bc279f36a3",
+    "retired_at": null,
+    "created_at": "2025-02-03T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2025-02-03T08:30:00+00:00"
+  },
+  {
+    "id": "7d4eb238-4ce7-5cea-8a37-992881714c45",
+    "auth_user_id": null,
+    "email": "dirk.sauer@ravensberg-cb.example",
+    "name": "Dirk Sauer",
+    "role": "site_user",
+    "site_id": "57c5fcdc-308f-5632-b5fa-ae721b8c3812",
+    "retired_at": "2026-03-31T17:00:00+00:00",
+    "created_at": "2025-01-13T08:30:00+00:00",
+    "updated_by": null,
+    "updated_at": "2026-03-31T17:00:00+00:00"
+  }
+]

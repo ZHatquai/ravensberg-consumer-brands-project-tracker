@@ -1,0 +1,38 @@
+/* Ravensberg Consumer Brands — UI tokens. Light theme only. */
+:root {
+  --rb-green: #0F6B3A;        /* primary: headings, header rows, primary series */
+  --rb-leaf: #7FB069;         /* secondary: rules, eyebrows, third series */
+  --rb-taupe: #C9A27F;        /* warm accent: comparative series, tagline */
+  --rb-stone: #F5F4EF;        /* page background, zebra rows */
+  --rb-charcoal: #333333;     /* body text */
+  --rb-white: #FFFFFF;        /* cards, text on green */
+
+  --rb-grey-mid: #6B6B6B;     /* captions, axis labels */
+  --rb-grey-line: #DDDBD3;    /* borders, gridlines, table rules */
+
+  /* semantic status: never the brand greens */
+  --rb-ok: #2E8B57;
+  --rb-attention: #D98E2B;
+  --rb-problem: #C0392B;
+
+  --rb-font-display: Montserrat, "Segoe UI", Arial, sans-serif;
+  --rb-font-body: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+
+  --rb-radius: 10px;
+  --rb-card-border: 1px solid var(--rb-grey-line);
+  --rb-shadow: 0 1px 2px rgba(51,51,51,0.05);
+}
+body { background: var(--rb-stone); color: var(--rb-charcoal); font-family: var(--rb-font-body); }
+h1, h2, h3, .rb-kpi-value { font-family: var(--rb-font-display); color: var(--rb-green); font-weight: 600; }
+.rb-eyebrow { font-family: var(--rb-font-body); font-weight: 600; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--rb-green); }
+.rb-rule { width: 56px; height: 4px; background: var(--rb-leaf); }
+.rb-card { background: var(--rb-white); border: var(--rb-card-border); border-radius: var(--rb-radius); box-shadow: var(--rb-shadow); }
+.rb-card--kpi { border-top: 5px solid var(--rb-green); }
+.rb-table th { background: var(--rb-green); color: var(--rb-white); font-family: var(--rb-font-display); font-weight: 600; }
+.rb-table tr:nth-child(even) td { background: var(--rb-stone); }
+.rb-table td { border-bottom: 1px solid var(--rb-grey-line); font-variant-numeric: tabular-nums; }
+.rb-rating { font-family: var(--rb-font-display); font-weight: 700; color: var(--rb-green); }
+.rb-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+.rb-dot--ok { background: var(--rb-ok); } .rb-dot--attention { background: var(--rb-attention); } .rb-dot--problem { background: var(--rb-problem); }
+.rb-estimate { border: 1.5px dashed var(--rb-attention); }
+/* chart series order: green, taupe, leaf, charcoal 60% */

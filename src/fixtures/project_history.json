@@ -1,0 +1,992 @@
+[
+  {
+    "id": "7bdd6fc1-6efb-506d-8abe-98207c2c9c37",
+    "project_id": "16daaf55-6284-565b-83fc-aee3d92ce63e",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0002 v1 (Potential)",
+    "comment": null,
+    "changed_by": "7d4eb238-4ce7-5cea-8a37-992881714c45",
+    "changed_at": "2025-01-20T09:15:00+00:00"
+  },
+  {
+    "id": "35125d79-3589-5de8-b1f0-4f70fb0e3f5f",
+    "project_id": "95aad904-3d98-5391-8fc9-1d06dd2e844c",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0026 v1 (Potential)",
+    "comment": null,
+    "changed_by": "1dd238dd-1e6d-5e42-a7ac-6d1885f84046",
+    "changed_at": "2025-01-28T09:15:00+00:00"
+  },
+  {
+    "id": "9645a27c-6efd-5016-96d1-e94e731db319",
+    "project_id": "72bba7f9-088b-597b-b270-54f925888ce6",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0001 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e10eb550-21fc-58c5-82ed-d7abd6a4d03d",
+    "changed_at": "2025-02-10T09:15:00+00:00"
+  },
+  {
+    "id": "d7aa445e-a86c-5fc3-aa7c-048ac75a30f9",
+    "project_id": "16daaf55-6284-565b-83fc-aee3d92ce63e",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Standard PV case, strong payback.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-02-12T14:00:00+00:00"
+  },
+  {
+    "id": "9dbf0d93-a561-54b2-9027-d6dbfd387d08",
+    "project_id": "95aad904-3d98-5391-8fc9-1d06dd2e844c",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Quick win.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-02-12T14:00:00+00:00"
+  },
+  {
+    "id": "64614ed8-d5d1-5180-9f06-98d882a8c5de",
+    "project_id": "b2815922-4891-5446-9961-bf7b34439706",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0007 v1 (Potential)",
+    "comment": null,
+    "changed_by": "caa6b15f-230c-53dd-84ac-625267e300b0",
+    "changed_at": "2025-02-18T09:15:00+00:00"
+  },
+  {
+    "id": "6bd72574-53b4-5ada-baa0-2f147320b8d3",
+    "project_id": "78038660-bb16-52c6-9bd4-b9ceaf639ac9",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0022 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e10eb550-21fc-58c5-82ed-d7abd6a4d03d",
+    "changed_at": "2025-02-24T09:15:00+00:00"
+  },
+  {
+    "id": "ffabb4a2-0ad0-5fc0-b74a-47c9c970cd8b",
+    "project_id": "72bba7f9-088b-597b-b270-54f925888ce6",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Largest single lever at Bielefeld; business case checked with Group Engineering.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-03-03T14:00:00+00:00"
+  },
+  {
+    "id": "8104df99-a847-500e-bd73-492e3fdc34ad",
+    "project_id": "b2815922-4891-5446-9961-bf7b34439706",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Also an air-quality improvement in the warehouse.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-03-03T14:00:00+00:00"
+  },
+  {
+    "id": "0f401dfa-3394-5c50-bda9-5c5eb7d535ce",
+    "project_id": "d12199f5-8d05-59f5-8262-d23bc31e822a",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0003 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e5c37ab3-e5ba-5720-b85f-350e2129ffa8",
+    "changed_at": "2025-03-05T09:15:00+00:00"
+  },
+  {
+    "id": "b7770a21-a8fa-5c4b-9250-c599ca68bd07",
+    "project_id": "78038660-bb16-52c6-9bd4-b9ceaf639ac9",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Largest water lever in the group.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-03-10T14:00:00+00:00"
+  },
+  {
+    "id": "9bdc30b9-2a5c-5c74-89e4-c8e5a6d82bc4",
+    "project_id": "9688a7f5-fc44-5bd3-99ff-dc5fdc10f9e9",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0012 v1 (Potential)",
+    "comment": null,
+    "changed_by": "4c64907b-ad32-55dd-88aa-479fefcc9154",
+    "changed_at": "2025-03-11T09:15:00+00:00"
+  },
+  {
+    "id": "ec7113fe-8db5-52c4-b168-84876f344ad1",
+    "project_id": "d12199f5-8d05-59f5-8262-d23bc31e822a",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Second largest lever in the portfolio.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-03-20T14:00:00+00:00"
+  },
+  {
+    "id": "a3c14cbf-892a-57c6-82bc-103492da87f9",
+    "project_id": "f5159702-e430-5cf3-ad3b-0b3d10fa3849",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0036 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e5c37ab3-e5ba-5720-b85f-350e2129ffa8",
+    "changed_at": "2025-03-24T09:15:00+00:00"
+  },
+  {
+    "id": "c7753920-c978-51be-9327-93919c007c51",
+    "project_id": "9688a7f5-fc44-5bd3-99ff-dc5fdc10f9e9",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Quick win.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-03-28T14:00:00+00:00"
+  },
+  {
+    "id": "2940e160-10d0-5e64-9ab7-75e2636035e8",
+    "project_id": "8ee91886-ffb8-5cb3-ad64-928ea119f3f7",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0005 v1 (Potential)",
+    "comment": null,
+    "changed_by": "1dd238dd-1e6d-5e42-a7ac-6d1885f84046",
+    "changed_at": "2025-04-01T09:15:00+00:00"
+  },
+  {
+    "id": "3c6e3dad-1b58-5757-bdff-7824e1c00c06",
+    "project_id": "f5159702-e430-5cf3-ad3b-0b3d10fa3849",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Quick win.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-08T14:00:00+00:00"
+  },
+  {
+    "id": "77320db4-30ea-50cf-b3ee-eb5cfc74b5b0",
+    "project_id": "964082cf-2eb5-56c7-b691-885f9cac7df4",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0018 v1 (Potential)",
+    "comment": null,
+    "changed_by": "d6296b95-d583-5c40-ae28-f489f2795f7d",
+    "changed_at": "2025-04-09T09:15:00+00:00"
+  },
+  {
+    "id": "369cabc5-cf3a-5e1e-80e6-79d06361fbaa",
+    "project_id": "72bba7f9-088b-597b-b270-54f925888ce6",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved. Fuel supply contract to be signed before order.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-15T14:00:00+00:00"
+  },
+  {
+    "id": "32a901a9-99dd-5532-9700-a3061034b17a",
+    "project_id": "16daaf55-6284-565b-83fc-aee3d92ce63e",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-15T14:00:00+00:00"
+  },
+  {
+    "id": "d5d4b005-201a-508f-bec5-0c5f289ba7b4",
+    "project_id": "b2815922-4891-5446-9961-bf7b34439706",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-15T14:00:00+00:00"
+  },
+  {
+    "id": "0f7b3222-a92e-5757-8777-0e28276aaf6e",
+    "project_id": "78038660-bb16-52c6-9bd4-b9ceaf639ac9",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-15T14:00:00+00:00"
+  },
+  {
+    "id": "b3f18f7b-601d-57be-8614-22ebf76ee727",
+    "project_id": "95aad904-3d98-5391-8fc9-1d06dd2e844c",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-15T14:00:00+00:00"
+  },
+  {
+    "id": "bb14fe80-3ed3-59ae-a75e-b07254783ebe",
+    "project_id": "f5159702-e430-5cf3-ad3b-0b3d10fa3849",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-15T14:00:00+00:00"
+  },
+  {
+    "id": "bc6b6099-e27b-5d11-b028-37838a701b7e",
+    "project_id": "8ee91886-ffb8-5cb3-ad64-928ea119f3f7",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Quick win.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-20T14:00:00+00:00"
+  },
+  {
+    "id": "16143818-150c-5551-baaa-a751c066827e",
+    "project_id": "964082cf-2eb5-56c7-b691-885f9cac7df4",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Quick win.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-04-24T14:00:00+00:00"
+  },
+  {
+    "id": "d34d01ee-b053-5a0d-9afc-ea2c6d6e2a8c",
+    "project_id": "1f373fbb-2285-502b-af1d-bcf4011b9db2",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0023 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e5c37ab3-e5ba-5720-b85f-350e2129ffa8",
+    "changed_at": "2025-05-05T09:15:00+00:00"
+  },
+  {
+    "id": "24a81296-369e-5265-a55a-a079833ec0e3",
+    "project_id": "fe733a2c-a577-5e87-8b31-e498ece5d1ff",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0008 v1 (Potential)",
+    "comment": null,
+    "changed_by": "c833cbec-fe77-5650-9673-cc9be2fbf2ad",
+    "changed_at": "2025-05-12T09:15:00+00:00"
+  },
+  {
+    "id": "1a1865a6-9c8f-511f-b22a-b8c2970977f7",
+    "project_id": "72bba7f9-088b-597b-b270-54f925888ce6",
+    "field": "annual_impact",
+    "old_value": "6500",
+    "new_value": "6200",
+    "comment": "Site re-measured steam demand after the boiler survey.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-05-20T11:00:00+00:00"
+  },
+  {
+    "id": "21ae6c6a-47d9-593d-8bfb-97a38d4c05ae",
+    "project_id": "72bba7f9-088b-597b-b270-54f925888ce6",
+    "field": "total_impact",
+    "old_value": "32500",
+    "new_value": "31000",
+    "comment": "Site re-measured steam demand after the boiler survey.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-05-20T11:00:00+00:00"
+  },
+  {
+    "id": "b78ec7a5-090b-5143-b57d-652c5a5bb291",
+    "project_id": "1f373fbb-2285-502b-af1d-bcf4011b9db2",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Good case.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-05-20T14:00:00+00:00"
+  },
+  {
+    "id": "f5110056-8a2b-5589-b971-cce169d7943d",
+    "project_id": "fe733a2c-a577-5e87-8b31-e498ece5d1ff",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Standard measure.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-05-30T14:00:00+00:00"
+  },
+  {
+    "id": "cbbe1342-a1a1-5696-8bb8-ec8f3e29e529",
+    "project_id": "afdf5db9-5ceb-5dbe-9ded-0631a8cb003d",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0028 v1 (Potential)",
+    "comment": null,
+    "changed_by": "caa6b15f-230c-53dd-84ac-625267e300b0",
+    "changed_at": "2025-06-03T09:15:00+00:00"
+  },
+  {
+    "id": "160eb88c-0ef7-553f-9a0c-f2c31b503dd9",
+    "project_id": "56475265-445d-5465-b204-c63bb57cd9be",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0020 v1 (Potential)",
+    "comment": null,
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-16T09:15:00+00:00"
+  },
+  {
+    "id": "41657b0f-612b-5a4d-86e2-735b119c7350",
+    "project_id": "56475265-445d-5465-b204-c63bb57cd9be",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Group project.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-16T14:00:00+00:00"
+  },
+  {
+    "id": "c02549c8-1a36-5a8f-831e-ca85d5e0556f",
+    "project_id": "afdf5db9-5ceb-5dbe-9ded-0631a8cb003d",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Small, solid case.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-18T14:00:00+00:00"
+  },
+  {
+    "id": "1697e82e-f870-5815-a4d0-4e114ad7d983",
+    "project_id": "d12199f5-8d05-59f5-8262-d23bc31e822a",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved. Commissioning planned for Q2 2026.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-24T14:00:00+00:00"
+  },
+  {
+    "id": "438b9dc2-4bb9-5b02-b17a-43eed497dbda",
+    "project_id": "8ee91886-ffb8-5cb3-ad64-928ea119f3f7",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-24T14:00:00+00:00"
+  },
+  {
+    "id": "d8bd5c43-2024-530a-a992-3fb80ab109f7",
+    "project_id": "fe733a2c-a577-5e87-8b31-e498ece5d1ff",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-24T14:00:00+00:00"
+  },
+  {
+    "id": "e7cc53de-f78e-502e-a084-967d3e3e5d82",
+    "project_id": "9688a7f5-fc44-5bd3-99ff-dc5fdc10f9e9",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-24T14:00:00+00:00"
+  },
+  {
+    "id": "1ea489dd-c55d-5380-93ae-b36058d7f68c",
+    "project_id": "964082cf-2eb5-56c7-b691-885f9cac7df4",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-24T14:00:00+00:00"
+  },
+  {
+    "id": "2fc563b9-c91f-5343-9173-8d1c55b4df88",
+    "project_id": "56475265-445d-5465-b204-c63bb57cd9be",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-24T14:00:00+00:00"
+  },
+  {
+    "id": "4612cb88-b3c0-521d-b6aa-f7dafa0dd4c3",
+    "project_id": "1f373fbb-2285-502b-af1d-bcf4011b9db2",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-24T14:00:00+00:00"
+  },
+  {
+    "id": "2458f2ca-8104-559a-858d-6a00004e0590",
+    "project_id": "afdf5db9-5ceb-5dbe-9ded-0631a8cb003d",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-06-24T14:00:00+00:00"
+  },
+  {
+    "id": "70ffd5a9-52f7-56ab-9d98-c5f96e4b1c92",
+    "project_id": "f9934d4e-e6e8-5883-a980-a6785b8ad0c8",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0025 v1 (Potential)",
+    "comment": null,
+    "changed_by": "d6296b95-d583-5c40-ae28-f489f2795f7d",
+    "changed_at": "2025-07-15T09:15:00+00:00"
+  },
+  {
+    "id": "439074ef-1e37-58a1-85e1-724ce1a733da",
+    "project_id": "f9934d4e-e6e8-5883-a980-a6785b8ad0c8",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Standard measure.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-08-04T14:00:00+00:00"
+  },
+  {
+    "id": "6cce5f0f-1208-5e51-9072-e54b8de79098",
+    "project_id": "8c9e3b9e-de0a-5630-afc3-b3a0e9a60b09",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0031 v1 (Potential)",
+    "comment": null,
+    "changed_by": "caa6b15f-230c-53dd-84ac-625267e300b0",
+    "changed_at": "2025-08-11T09:15:00+00:00"
+  },
+  {
+    "id": "38388be8-7f05-5535-bbfc-5db0418accb6",
+    "project_id": "cdcb5326-5f0e-5ef2-b7ca-54aea1193b10",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0010 v1 (Potential)",
+    "comment": null,
+    "changed_by": "d6296b95-d583-5c40-ae28-f489f2795f7d",
+    "changed_at": "2025-08-20T09:15:00+00:00"
+  },
+  {
+    "id": "1499aace-c0d3-5269-a346-45d803d72488",
+    "project_id": "8c9e3b9e-de0a-5630-afc3-b3a0e9a60b09",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Contract ready.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-09-01T14:00:00+00:00"
+  },
+  {
+    "id": "4ce322ea-852b-58f7-bef5-3686e6b3f0c3",
+    "project_id": "6f71abbc-1420-5642-9300-afa33e48a46d",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0013 v1 (Potential)",
+    "comment": null,
+    "changed_by": "1dd238dd-1e6d-5e42-a7ac-6d1885f84046",
+    "changed_at": "2025-09-02T09:15:00+00:00"
+  },
+  {
+    "id": "7fbf1aad-fa63-502f-8936-0a31714a8641",
+    "project_id": "68837b33-fe56-5463-84e8-da936beba028",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0009 v1 (Potential)",
+    "comment": null,
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-09-08T09:15:00+00:00"
+  },
+  {
+    "id": "7368c2de-37ce-528c-8ca1-fc12bb3ee325",
+    "project_id": "68837b33-fe56-5463-84e8-da936beba028",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Group project, registered by Group Sustainability.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-09-08T14:00:00+00:00"
+  },
+  {
+    "id": "376ef10a-1df6-5a04-82d0-2ab42896e91a",
+    "project_id": "cdcb5326-5f0e-5ef2-b7ca-54aea1193b10",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Worth taking to the committee; payback is long.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-09-10T14:00:00+00:00"
+  },
+  {
+    "id": "dbf3c451-8c66-5f76-9736-0e9046fed0de",
+    "project_id": "21232280-ee36-565a-8eca-ea485d4b71b8",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0032 v1 (Potential)",
+    "comment": null,
+    "changed_by": "d6296b95-d583-5c40-ae28-f489f2795f7d",
+    "changed_at": "2025-09-16T09:15:00+00:00"
+  },
+  {
+    "id": "9ebe16b5-da30-5325-9f71-c5dba615f2b3",
+    "project_id": "6f71abbc-1420-5642-9300-afa33e48a46d",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Small lever; let the committee decide.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-09-18T14:00:00+00:00"
+  },
+  {
+    "id": "cc17951c-7f7c-5e8d-a27d-22b6d851d3a4",
+    "project_id": "21232280-ee36-565a-8eca-ea485d4b71b8",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Feed registration confirmed.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-10-01T14:00:00+00:00"
+  },
+  {
+    "id": "212dc961-1cd4-5515-a2a3-fb2b30146c49",
+    "project_id": "90d454bb-acfb-5dda-a92c-81dbec313b17",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0017 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e5c37ab3-e5ba-5720-b85f-350e2129ffa8",
+    "changed_at": "2025-10-06T09:15:00+00:00"
+  },
+  {
+    "id": "88e782f1-f829-5abf-8862-fcd7619f44b4",
+    "project_id": "a870b813-2b4d-588b-afa2-fe5ab8f8b9ec",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0035 v1 (Potential)",
+    "comment": null,
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-10-13T09:15:00+00:00"
+  },
+  {
+    "id": "54f4c4a7-84f1-5702-86e5-791f2ca4df5b",
+    "project_id": "a870b813-2b4d-588b-afa2-fe5ab8f8b9ec",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Group project.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-10-13T14:00:00+00:00"
+  },
+  {
+    "id": "d1f46887-6281-505a-a050-f61cd9f7d284",
+    "project_id": "90d454bb-acfb-5dda-a92c-81dbec313b17",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Quick win.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-10-20T14:00:00+00:00"
+  },
+  {
+    "id": "cdc9b79f-2703-5acf-bb7e-e1e1abae16e1",
+    "project_id": "68837b33-fe56-5463-84e8-da936beba028",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved. Policy effective 1 January 2026.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-11-19T14:00:00+00:00"
+  },
+  {
+    "id": "1f5dec5f-28ab-5cd1-81c2-c5cba099cd23",
+    "project_id": "cdcb5326-5f0e-5ef2-b7ca-54aea1193b10",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Declined",
+    "comment": "Declined: payback above ten years. Resubmit with a revised capex and a later start.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-11-19T14:00:00+00:00"
+  },
+  {
+    "id": "36c5dff4-9010-5f0a-86fc-e4200044c3d2",
+    "project_id": "6f71abbc-1420-5642-9300-afa33e48a46d",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Declined",
+    "comment": "Declined: low impact for the capex; the compressor programme at the site delivers more.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-11-19T14:00:00+00:00"
+  },
+  {
+    "id": "f6cb0c19-78c8-5b29-b63d-f0c4726fc471",
+    "project_id": "90d454bb-acfb-5dda-a92c-81dbec313b17",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-11-19T14:00:00+00:00"
+  },
+  {
+    "id": "aeacc2bf-13f8-58a1-bcdb-edc0c1d6eb03",
+    "project_id": "f9934d4e-e6e8-5883-a980-a6785b8ad0c8",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-11-19T14:00:00+00:00"
+  },
+  {
+    "id": "612f8eaf-3de8-5331-a3cb-770dc34b1d75",
+    "project_id": "8c9e3b9e-de0a-5630-afc3-b3a0e9a60b09",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-11-19T14:00:00+00:00"
+  },
+  {
+    "id": "75347b76-5b4c-5b89-8e44-cd8494b9290e",
+    "project_id": "21232280-ee36-565a-8eca-ea485d4b71b8",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-11-19T14:00:00+00:00"
+  },
+  {
+    "id": "a278fa19-5a81-52bd-a957-ccd49d7b34c3",
+    "project_id": "a870b813-2b4d-588b-afa2-fe5ab8f8b9ec",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2025-11-19T14:00:00+00:00"
+  },
+  {
+    "id": "16595c4c-eaa8-5f4c-b305-a11779b3c37e",
+    "project_id": "ce116942-e8c4-5a7a-b2cc-83aab108f280",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0037 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e10eb550-21fc-58c5-82ed-d7abd6a4d03d",
+    "changed_at": "2025-12-02T09:15:00+00:00"
+  },
+  {
+    "id": "134f29e9-2039-5d5a-9cd9-3b767e3a29f3",
+    "project_id": "ce116942-e8c4-5a7a-b2cc-83aab108f280",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Depends on the supplier contract.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-01-12T14:00:00+00:00"
+  },
+  {
+    "id": "7088e7b3-96aa-55c2-bcc7-4e82eef05eac",
+    "project_id": "5321ac08-28c6-5ddc-a50c-b19636166b7f",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0010 v2 (Potential)",
+    "comment": "Resubmission of the declined version",
+    "changed_by": "d6296b95-d583-5c40-ae28-f489f2795f7d",
+    "changed_at": "2026-01-14T09:15:00+00:00"
+  },
+  {
+    "id": "2842c766-b302-5ea3-84df-9a47e9c8a3dc",
+    "project_id": "5321ac08-28c6-5ddc-a50c-b19636166b7f",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Revised capex addresses the committee's point.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-02-02T14:00:00+00:00"
+  },
+  {
+    "id": "1aa31050-c1c6-576e-ba95-e33816cffbef",
+    "project_id": "e9261aca-0a43-50a2-962d-9face40e695b",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0030 v1 (Potential)",
+    "comment": null,
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-02-03T09:15:00+00:00"
+  },
+  {
+    "id": "d0fb2b73-5d41-5b29-8015-920fbdb72f64",
+    "project_id": "6f71abbc-1420-5642-9300-afa33e48a46d",
+    "field": "status",
+    "old_value": "Declined",
+    "new_value": "Retired",
+    "comment": "Retired by the site: the compressor programme was chosen instead.",
+    "changed_by": "1dd238dd-1e6d-5e42-a7ac-6d1885f84046",
+    "changed_at": "2026-02-10T14:00:00+00:00"
+  },
+  {
+    "id": "8df1d833-129b-5079-921f-b4c060965d1d",
+    "project_id": "e9261aca-0a43-50a2-962d-9face40e695b",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Declined",
+    "comment": "Declined at endorsement: no site has a metering baseline yet, so the saving cannot be evidenced. Resubmit after the sub-metering roll-out (PRJ-0020).",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-02-17T14:00:00+00:00"
+  },
+  {
+    "id": "b29b52cf-d613-5395-adb1-05415376d667",
+    "project_id": "c796e8dc-23d7-5d2c-8a0a-5361cf1b67ed",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0029 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e10eb550-21fc-58c5-82ed-d7abd6a4d03d",
+    "changed_at": "2026-03-10T09:15:00+00:00"
+  },
+  {
+    "id": "39eb0af5-c2e4-5400-9f50-6aa40fb0280a",
+    "project_id": "5321ac08-28c6-5ddc-a50c-b19636166b7f",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Approved",
+    "comment": "Approved.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-03-25T14:00:00+00:00"
+  },
+  {
+    "id": "22687a59-c25b-59b1-a7f4-3e191196088b",
+    "project_id": "ce116942-e8c4-5a7a-b2cc-83aab108f280",
+    "field": "status",
+    "old_value": "Pending approval",
+    "new_value": "Declined",
+    "comment": "Declined: the supplier contract does not allow returns. Revisit at the contract renewal in 2027.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-03-25T14:00:00+00:00"
+  },
+  {
+    "id": "b1e53ef7-f41f-537d-96c0-0d5a6b64014c",
+    "project_id": "c796e8dc-23d7-5d2c-8a0a-5361cf1b67ed",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Proven at other breweries.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-03-30T14:00:00+00:00"
+  },
+  {
+    "id": "b6f43c33-3bc8-5429-a030-5776f74266e2",
+    "project_id": "1368bd3a-a21f-566e-999f-2e167434fc82",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0024 v1 (Potential)",
+    "comment": null,
+    "changed_by": "4c64907b-ad32-55dd-88aa-479fefcc9154",
+    "changed_at": "2026-04-14T09:15:00+00:00"
+  },
+  {
+    "id": "ac017310-cab2-5f65-9303-338d36905bc4",
+    "project_id": "80797c33-db52-5066-98ab-e7843ceec567",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0011 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e5c37ab3-e5ba-5720-b85f-350e2129ffa8",
+    "changed_at": "2026-04-22T09:15:00+00:00"
+  },
+  {
+    "id": "2394dcc0-eb9e-5620-859f-3e80f4e1052a",
+    "project_id": "80797c33-db52-5066-98ab-e7843ceec567",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Declined",
+    "comment": "Declined at endorsement: locks in gas for 20 years and is not aligned with the 2030 plan. Please look at the heat-pump option with Group Engineering.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-05-06T14:00:00+00:00"
+  },
+  {
+    "id": "8fa540e6-4e5b-510b-a773-cd56696bad71",
+    "project_id": "941b3eda-7f86-5af7-9610-1e2ec34ac48a",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0016 v1 (Potential)",
+    "comment": null,
+    "changed_by": "caa6b15f-230c-53dd-84ac-625267e300b0",
+    "changed_at": "2026-05-19T09:15:00+00:00"
+  },
+  {
+    "id": "fb4347f0-c0c3-57e3-a19d-c8d815fab45d",
+    "project_id": "4780df69-6515-5481-91e9-d7fe17d012f3",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0033 v1 (Potential)",
+    "comment": null,
+    "changed_by": "4c64907b-ad32-55dd-88aa-479fefcc9154",
+    "changed_at": "2026-05-26T09:15:00+00:00"
+  },
+  {
+    "id": "02c23a51-86b4-5144-a86f-467a735a3939",
+    "project_id": "1badd089-2050-5c09-b4d9-a40b250a11df",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0004 v1 (Potential)",
+    "comment": null,
+    "changed_by": "d6296b95-d583-5c40-ae28-f489f2795f7d",
+    "changed_at": "2026-06-02T09:15:00+00:00"
+  },
+  {
+    "id": "92cdf86a-d7b9-5e4e-940c-073368b8d922",
+    "project_id": "941b3eda-7f86-5af7-9610-1e2ec34ac48a",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Roof statics confirmed.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-06-10T14:00:00+00:00"
+  },
+  {
+    "id": "8aa72cba-161c-5f46-8cc5-eb73b4368192",
+    "project_id": "1368bd3a-a21f-566e-999f-2e167434fc82",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Hygiene concept confirmed by Quality.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-06-10T14:00:00+00:00"
+  },
+  {
+    "id": "b793e1d1-6ffa-57b4-a3fe-dc7459e2f673",
+    "project_id": "9688a7f5-fc44-5bd3-99ff-dc5fdc10f9e9",
+    "field": "status",
+    "old_value": "Approved",
+    "new_value": "Obsolete",
+    "comment": "Obsolete: the boiler house closes in 2027 when the heat pump project replaces it. Savings no longer count.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-07-01T14:00:00+00:00"
+  },
+  {
+    "id": "12e07fe7-50ad-5aa6-bdc3-37e55bd8dc49",
+    "project_id": "76d6d564-b282-5eaf-9a2b-aca6a5d0803b",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0014 v1 (Potential)",
+    "comment": null,
+    "changed_by": "c833cbec-fe77-5650-9673-cc9be2fbf2ad",
+    "changed_at": "2026-07-07T09:15:00+00:00"
+  },
+  {
+    "id": "6e055cd9-ff01-5101-a927-e14ab3817507",
+    "project_id": "4780df69-6515-5481-91e9-d7fe17d012f3",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Takes the site over 95 %.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-07-14T14:00:00+00:00"
+  },
+  {
+    "id": "783b7812-0b9a-5c35-b671-1ec64740e3c0",
+    "project_id": "1badd089-2050-5c09-b4d9-a40b250a11df",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Fits the oven replacement cycle; needs committee view on the capex.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-08-18T14:00:00+00:00"
+  },
+  {
+    "id": "61157018-6d76-5b84-880a-a38201e6b262",
+    "project_id": "b365b81e-22b5-560a-aca4-1abaaa8559ab",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0034 v1 (Potential)",
+    "comment": null,
+    "changed_by": "c833cbec-fe77-5650-9673-cc9be2fbf2ad",
+    "changed_at": "2026-08-25T09:15:00+00:00"
+  },
+  {
+    "id": "621c69a9-4a61-5df3-a43f-064a552ae4b9",
+    "project_id": "76d6d564-b282-5eaf-9a2b-aca6a5d0803b",
+    "field": "status",
+    "old_value": "Potential",
+    "new_value": "Pending approval",
+    "comment": "Technically sound; capex to be confirmed by the committee.",
+    "changed_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "changed_at": "2026-09-01T14:00:00+00:00"
+  },
+  {
+    "id": "84ad043d-5b71-5fe0-bd70-8680045cb635",
+    "project_id": "72ffa61a-c5b0-5503-8fdc-c798ee97fff9",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0006 v1 (Potential)",
+    "comment": null,
+    "changed_by": "4c64907b-ad32-55dd-88aa-479fefcc9154",
+    "changed_at": "2026-09-14T09:15:00+00:00"
+  },
+  {
+    "id": "d077339c-9139-5e95-944e-fb70532808d3",
+    "project_id": "672d6694-bb1f-595f-bdd6-822b223fd971",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0027 v1 (Potential)",
+    "comment": null,
+    "changed_by": "c833cbec-fe77-5650-9673-cc9be2fbf2ad",
+    "changed_at": "2026-09-21T09:15:00+00:00"
+  },
+  {
+    "id": "89cd96c9-2598-546e-8498-dab1b19d76d6",
+    "project_id": "084c757b-4378-581c-8b7c-be397ec3566e",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0015 v1 (Potential)",
+    "comment": null,
+    "changed_by": "e10eb550-21fc-58c5-82ed-d7abd6a4d03d",
+    "changed_at": "2026-09-28T09:15:00+00:00"
+  },
+  {
+    "id": "29a5304e-0ae7-54ae-a3e2-0c3e1ac72154",
+    "project_id": "f545e32b-ee16-5491-99cc-9db5ecf66517",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0021 v1 (Potential)",
+    "comment": null,
+    "changed_by": "4c64907b-ad32-55dd-88aa-479fefcc9154",
+    "changed_at": "2026-09-30T09:15:00+00:00"
+  },
+  {
+    "id": "a1055536-ac6b-5a0a-b682-467782303964",
+    "project_id": "3fcc0347-05db-59ca-bc22-9388da944129",
+    "field": "created",
+    "old_value": null,
+    "new_value": "PRJ-0019 v1 (Potential)",
+    "comment": null,
+    "changed_by": "1dd238dd-1e6d-5e42-a7ac-6d1885f84046",
+    "changed_at": "2026-10-01T09:15:00+00:00"
+  },
+  {
+    "id": "a20455dc-b8c7-5094-881c-7d79903b921d",
+    "project_id": "084c757b-4378-581c-8b7c-be397ec3566e",
+    "field": "capex_eur",
+    "old_value": "700000",
+    "new_value": "760000",
+    "comment": null,
+    "changed_by": "e10eb550-21fc-58c5-82ed-d7abd6a4d03d",
+    "changed_at": "2026-10-02T11:00:00+00:00"
+  }
+]

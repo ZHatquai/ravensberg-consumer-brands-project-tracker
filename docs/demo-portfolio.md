@@ -19,7 +19,7 @@ Logins are magic links: the person enters the address on the login page and open
 
 ## 3. What the demo portfolio contains
 
-Snapshot of the golden state (the seed of 9 October 2026; a reset brings exactly this back):
+The demo state (the seed of 9 October 2026; the reset brings exactly this back):
 
 | Table | Rows | Content |
 |---|---|---|
@@ -31,7 +31,7 @@ Snapshot of the golden state (the seed of 9 October 2026; a reset brings exactly
 | decisions | 57 | endorsements, committee decisions (approvals and declines), two declines at endorsement, one obsolete |
 | project_history | 99 | the audit trail of every row |
 
-Statuses in the golden state: Approved 20, Pending approval 6, Potential 6, Declined 4 (one of them superseded by its version 2), Retired 1, Obsolete 1. By category: 18 emissions, 9 water, 7 waste projects plus the versions. Group projects (ESG lead): PRJ-0009 fleet electrification, PRJ-0020 energy management system, PRJ-0030 group leak detection (declined), PRJ-0035 group hazardous-waste contract.
+Statuses in the demo state: Approved 20, Pending approval 6, Potential 6, Declined 4 (one of them superseded by its version 2), Retired 1, Obsolete 1. By category: 18 emissions, 9 water, 7 waste projects plus the versions. Group projects (ESG lead): PRJ-0009 fleet electrification, PRJ-0020 energy management system, PRJ-0030 group leak detection (declined), PRJ-0035 group hazardous-waste contract.
 
 Rows that make a good walk-through:
 
@@ -43,59 +43,37 @@ Rows that make a good walk-through:
 - **PRJ-0021, 1400, Potential**, start year 2031: accepted with the warning that it contributes nothing to 2030.
 - **PRJ-0033, 1400, Pending approval** (Sludge dewatering): takes site 1400 over the 95 % waste threshold if approved.
 
-The reporting year selector rebuilds the portfolio as it stood at the end of 2025 (fewer approvals, the gaps larger), the current year is as of today.
+The reporting year selector rebuilds the portfolio as it stood at the end of 2025 (fewer approvals, the gaps larger); the current year is as of today.
 
 ## 4. What a workshop changes, and what the reset does with it
 
-A workshop touches the real tables: endorsements, decisions, new projects, resubmissions, figure entries, target changes, users added or retired. The reset puts the eight tables back to the golden state:
+A workshop touches the real tables: endorsements, decisions, new projects, resubmissions, figure entries, target changes, users added or retired. The reset script `supabase/demo-reset.sql` puts the tables back to the demo state:
 
-- **Wiped and restored exactly:** projects, decisions, project history, reference figures and their history. Every row the workshop created or changed disappears; the 38 demo projects with their decisions and history come back as stored.
-- **Restored by id:** sites and targets (a target changed in the workshop goes back to its value and loses the change reason; a site added in the workshop is deactivated, never deleted).
-- **People:** the ten demo profiles come back as stored. Every profile that has a login is kept, including participants added in the workshop, so they can log in again next time; their projects do not survive. A profile without a login that is not in the demo is removed. Login identities (Supabase Auth) are never touched: nobody has to be invited again, and a retired participant stays retired on their profile until the ESG lead changes it.
+- **Wiped and ingested again, exactly:** projects, decisions, project history, reference figures and their history. Every row the workshop created or changed disappears; the 38 demo projects with their decisions and history come back as stored.
+- **Put back by id:** the ten demo profiles (name, role, site, retired state), the seven sites (name, city, type, active) and the four targets (value, years, reason cleared). A site added in the workshop is deactivated, never deleted.
+- **People:** every profile that has a login is kept, including participants added in the workshop, so they can log in again next time; their projects do not survive. A profile without a login that is not in the demo is removed. Login identities (Supabase Auth) are never touched: nobody has to be invited again.
 - **Project codes:** the sequence goes back to PRJ-0037, so the next registered project is PRJ-0038 again.
 
-Not reset: the Auth users, the SMTP settings, the email templates, the Netlify site, this repository.
+Not touched: the Auth users, the SMTP settings, the email templates, the Netlify site, this repository.
 
 ## 5. The reset, step by step
 
-Who: the platform owner (Zyad), as the database itself, never a tool user. The functions refuse any session and are not callable through the API.
+Who: the platform owner (Zyad), in the Supabase dashboard. Nothing in the app can run it, and the script is plain data statements: no function, no table, no setting changes.
 
 **Before a workshop (every time):**
 
-1. Open a Claude Code session on this repository and say: "reset the demo portfolio". Claude Code runs, through the Supabase MCP, as a data fix:
-   ```sql
-   select public.demo_reset();
-   ```
-   and reports the counts it returns (sites 7, targets 4, profiles 10 plus participants, reference figures 20, projects 38, decisions 57, project history 99, next project code PRJ-0038).
-2. Alternatively, without Claude Code: Supabase dashboard → SQL Editor → run the same line. The result is the same JSON.
-3. Open the live tool as Zyad and check the Overview: Pending approval 6, Potential 6, the group emissions card as in section 3. Done.
+1. Open `supabase/demo-reset.sql` from this repository (GitHub, or the Claude Code session) and copy the whole file.
+2. Supabase dashboard → project ravensberg-consumer-brands → SQL Editor → New query → paste → Run.
+3. The last line of the result shows the counts after the reset: profiles 10 (plus participants with a login), reference figures 20, projects 38, decisions 57, project history 99, next project code PRJ-0038. The script runs as one transaction: if any statement fails, nothing changes and the error names the statement.
+4. Open the live tool as Zyad and check the Overview: Pending approval 6, Potential 6, the emissions card as in section 3. Done.
 
-The reset runs in one transaction. If anything fails, nothing changes: the database stays as it was.
+A Claude Code session can run the same script through the Supabase MCP as a data fix, provided the session is allowed to run DELETE statements (on 9 October 2026 it was not, so the SQL Editor is the reliable path).
 
-**After the first workshop, if the golden state should change** (for example you prefer to keep a participant's good project as demo data, or you tune a figure):
-
-1. Make the database look exactly as the next workshop should start. The reset above, then your changes through the tool as Zyad.
-2. Take the snapshot, as the platform owner:
-   ```sql
-   select public.demo_snapshot_take('Golden state after workshop 1, <date>: <what changed>');
-   ```
-   It replaces the stored state with the current rows and returns the row counts. From then on, every reset returns to this state.
-3. Note the change in PROGRESS.md (Build decisions) so the next session knows the golden state moved.
-
-**To see what is stored:**
-
-```sql
-select table_name, jsonb_array_length(rows) as rows, note, taken_at from public.demo_snapshot where table_name <> 'meta' order by 1;
-```
+**If the demo state should change after a workshop** (a participant's good project kept as demo data, a tuned figure): make the change through the tool as Zyad, then ask Claude Code to regenerate `supabase/demo-reset.sql` from the live rows and commit it. The script is the demo state; whatever it holds comes back at the next reset. Note the change in PROGRESS.md (Build decisions).
 
 ## 6. Where it lives
 
-- `public.demo_snapshot`: one row per table with the rows as JSON, plus a `meta` row with the project-code sequence. RLS on, no policy, no grant: unreachable through the API.
-- `public.demo_snapshot_take(note)` and `public.demo_reset()`: SECURITY DEFINER, `search_path` empty, refuse a session (`auth.uid()` must be null), EXECUTE revoked from anon and authenticated. Migrations `20261009191230_demo_snapshot_table.sql` and the two function migrations that follow it; details in docs/supabase-setup.md §5.
-- The golden state was loaded on 9 October 2026 from the seed migrations (`20261009142725_seed_demo_portfolio_1.sql`, `20261009143326_seed_demo_portfolio_2.sql`), so a database rebuilt from the migration files and then snapshotted gives the same state.
-
-## 7. Known limits
-
-- The demo dates are fixed (projects submitted between January 2025 and October 2026). "Days waiting" and "as of today" grow with the calendar; by a workshop in 2027 the Pending approval rows will have waited longer than they do today. If that matters, shift the dates in the golden state and take a new snapshot.
-- A participant's profile survives the reset, their login too; if you want a clean Users screen, retire them on the Users screen after the workshop (never delete), or anonymise them on request.
+- `supabase/demo-reset.sql`: the script, generated on 9 October 2026 from the seed migrations `20261009142725_seed_demo_portfolio_1.sql` and `20261009143326_seed_demo_portfolio_2.sql` with the real row ids. Regenerate it with the same generator rather than editing it by hand.
+- The demo rows carry fixed dates (projects submitted between January 2025 and October 2026). "Days waiting" and "as of today" grow with the calendar; by a workshop in 2027 the Pending approval rows will have waited longer than they do today. If that matters, shift the dates in the script and commit it.
+- A participant's profile survives the reset, their login too; for a clean Users screen, retire them on the Users screen after the workshop (never delete), or anonymise them on request.
 - The reset is not an undo for a single action; it is all or nothing.

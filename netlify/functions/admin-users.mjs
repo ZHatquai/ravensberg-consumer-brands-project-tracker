@@ -12,10 +12,10 @@ const json = (status, body) => new Response(JSON.stringify(body), { status, head
 
 export default async (req) => {
   if (req.method !== 'POST') return json(405, { error: 'POST only' })
-  const url = process.env.VITE_SUPABASE_URL
+  const url = process.env.VITE_SUPABASE_DATABASE_URL || process.env.VITE_SUPABASE_URL // the project URL, as the extension writes it
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !secret) return json(500, { error: 'The admin function is not configured (Supabase variables missing).' })
-  if (!/^https:\/\//.test(url)) return json(500, { error: 'VITE_SUPABASE_URL is not the project URL.' })
+  if (!/^https:\/\//.test(url)) return json(500, { error: 'VITE_SUPABASE_DATABASE_URL is not the project URL.' })
 
   const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
   if (!token) return json(401, { error: 'Not signed in.' })

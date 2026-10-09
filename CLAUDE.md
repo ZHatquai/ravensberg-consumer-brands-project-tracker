@@ -44,7 +44,7 @@ Deployment: GitHub push to main → Netlify auto-deploys from main. Claude Code 
 Export — browser only, no server function — CSV of the register as filtered on screen (columns and file name per spec §3; a site user's file holds only their site) and the four-page PDF "CFO review pack" (design per spec §3), built from the same calculations as the Overview. ESG lead and CFO only for the PDF.
 
 ## Environment Variables
-VITE_SUPABASE_URL — written by the Supabase extension — browser — public
+VITE_SUPABASE_DATABASE_URL — written by the Supabase extension (this is the name it writes; the spec's VITE_SUPABASE_URL is accepted as a local fallback) — browser and the admin-users function — public
 VITE_SUPABASE_ANON_KEY — written by the Supabase extension — browser — public; its value must be the publishable key (`sb_publishable_…`); RLS protects the data
 SUPABASE_SERVICE_ROLE_KEY — written by the Supabase extension — Netlify Functions only (the admin-users function) — SECRET; its value must be the secret key (`sb_secret_…`); never VITE_-prefixed; refuses to run from a browser
 SUPABASE_DATABASE_URL — written by the Supabase extension — server-side only — SECRET; nothing uses it

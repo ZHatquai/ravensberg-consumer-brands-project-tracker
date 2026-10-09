@@ -253,12 +253,12 @@ As built (session 2, builder decision in spec §6): Supabase Auth, email provide
 
 | Name | Read by | Set where |
 |---|---|---|
-| `VITE_SUPABASE_URL` | browser (`src/lib/supabase.js`) and the admin-users function (the project URL) | Netlify env, written by the Supabase extension |
+| `VITE_SUPABASE_DATABASE_URL` | browser (`src/lib/supabase.js`) and the admin-users function: the project URL (`https://bqyjulvljqafubusplgm.supabase.co`). The spec and CLAUDE.md call it `VITE_SUPABASE_URL`; the extension writes this name (seen in the dashboard on 9 Oct 2026), so the code reads this one and accepts `VITE_SUPABASE_URL` only as a local fallback | Netlify env, written by the Supabase extension |
 | `VITE_SUPABASE_ANON_KEY` | browser; value must be the publishable key (`sb_publishable_…`); RLS protects the data | Netlify env, written by the Supabase extension; the builder replaced the legacy value by hand on 9 Oct 2026 |
 | `SUPABASE_SERVICE_ROLE_KEY` | the admin-users Netlify Function only; value must be the secret key (`sb_secret_…`); marked "contains secret values" | Netlify env, written by the Supabase extension; the builder replaced the legacy value by hand on 9 Oct 2026 |
 | `SUPABASE_DATABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET` | nothing; written by the extension; never read, never `VITE_`-prefixed | Netlify env |
 
-Verified on 9 October 2026 when the builder connected the extension with the Vite preset. The values cannot be checked from Claude Code; if a build or a login reports "Legacy API keys disabled" or "Invalid API key", an old value is in use somewhere. Local development: a `.env.local` (git-ignored) with the two `VITE_` names; the admin function runs only on Netlify (`netlify dev` with the site's variables).
+Verified on 9 October 2026 in the dashboard: the extension's full list is `SUPABASE_ANON_KEY`, `SUPABASE_DATABASE_URL`, `SUPABASE_JWT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_DATABASE_URL`, all for every deploy context (the secret key with one value per context, set by the builder). The values cannot be checked from Claude Code; if a build or a login reports "Legacy API keys disabled" or "Invalid API key", an old value is in use somewhere. Local development: a `.env.local` (git-ignored) with the two `VITE_` names; the admin function runs only on Netlify (`netlify dev` with the site's variables).
 
 ## 9. Notes and flags for future sessions
 

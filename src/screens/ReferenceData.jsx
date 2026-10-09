@@ -62,9 +62,10 @@ export default function ReferenceData() {
                   <td className="num">{t.base_year}</td>
                   <td className="num">{t.target_year}</td>
                   <td className="num rb-num">{t.category === 'waste_diversion' ? `≥ ${fmtNum(t.value, 0)} %` : `−${fmtNum(t.value, 0)} %`}</td>
-                  <td>
-                    {personName(t.set_by)}
+                  <td className="min-w-[200px]">
+                    {personName(t.updated_by || t.set_by)}
                     {t.updated_at && <div className="rb-caption text-[12px]">updated {fmtDate(t.updated_at)}</div>}
+                    {t.change_comment && <div className="text-[12px] mt-0.5">Reason: {t.change_comment}</div>}
                   </td>
                   {isEsgLead && (
                     <td>
@@ -78,7 +79,7 @@ export default function ReferenceData() {
             </tbody>
           </table>
         </div>
-        {isEsgLead && <p className="rb-caption text-[12px] mt-1">The value and the years can change; the category never does. The Overview recalculates at once.</p>}
+        {isEsgLead && <p className="rb-caption text-[12px] mt-1">The value and the years can change, with a stated reason; the category never does. A change applies to every site and the group at once.</p>}
       </section>
 
       <section>
@@ -350,8 +351,9 @@ function FigureDialog({ site, rows, onClose }) {
 }
 
 function TargetDialog({ target, onClose }) {
-  const [values, setValues] = useState({ value: String(target.value), base_year: String(target.base_year), target_year: String(target.target_year), active: target.active !== false })
+  const [values, setValues] = useState({ value: String(target.value), base_year: String(target.base_year), target_year: String(target.target_year), active: target.active !== false, comment: '' })
   const [state, setState] = useState({ status: 'idle' })
+  const changed = Number(values.value) !== Number(target.value) || Number(values.base_year) !== Number(target.base_year) || Number(values.target_year) !== Number(target.target_year) || values.active !== (target.active !== false)
   const submit = async (e) => {
     e.preventDefault()
     const value = Number(values.value)
@@ -359,9 +361,11 @@ function TargetDialog({ target, onClose }) {
     const ty = Number(values.target_year)
     if (Number.isNaN(value) || value <= 0 || value > 100) return setState({ status: 'error', message: 'The value is a percentage above 0 and at most 100.' })
     if (!Number.isInteger(base) || !Number.isInteger(ty) || base < 2000 || ty > 2100 || ty <= base) return setState({ status: 'error', message: 'The target year must come after the base year (2000 to 2100).' })
+    if (!changed) return setState({ status: 'error', message: 'Nothing changed.' })
+    if (!values.comment.trim()) return setState({ status: 'error', message: 'Give the reason for this change; it is recorded with your name and the time.' })
     setState({ status: 'working' })
     try {
-      await updateTarget(target.id, { value, base_year: base, target_year: ty, active: values.active })
+      await updateTarget(target.id, { value, base_year: base, target_year: ty, active: values.active, change_comment: values.comment.trim() })
       onClose()
     } catch (err) {
       setState({ status: 'error', message: err.message || String(err) })
@@ -394,11 +398,26 @@ function TargetDialog({ target, onClose }) {
           <input type="checkbox" checked={values.active} onChange={(e) => setValues((v) => ({ ...v, active: e.target.checked }))} />
           Active
         </label>
+        <div className="rb-card p-3 border-l-4 border-l-rb-attention" role="alert">
+          <div className="flex items-center gap-2 font-semibold">
+            <span className="rb-dot rb-dot--attention" aria-hidden="true" />
+            This changes the target for the whole organisation
+          </div>
+          <p className="text-[13px] mt-1">
+            Every site is measured against it: the required reductions, the uncovered gaps, the pathways and the review pack change at once, for every year. The change is recorded with your name, the time and the reason below.
+          </p>
+        </div>
+        <div>
+          <label className="rb-label" htmlFor="t-comment">
+            Reason for the change
+          </label>
+          <textarea id="t-comment" className="rb-textarea" rows={3} value={values.comment} onChange={(e) => setValues((v) => ({ ...v, comment: e.target.value }))} placeholder="Who decided it, when, and why" />
+        </div>
         <p className="rb-caption text-[12px]">The calculations use FY2024 and 2030 (spec §9); the years here are the record of the target as set.</p>
         {state.status === 'error' && <div className="rb-error">{state.message}</div>}
         <div className="flex gap-2 pt-1">
           <button type="submit" className="rb-btn rb-btn--primary" disabled={state.status === 'working'}>
-            {state.status === 'working' ? 'Saving…' : 'Save target'}
+            {state.status === 'working' ? 'Saving…' : 'Change the target'}
           </button>
           <button type="button" className="rb-btn" onClick={onClose}>
             Cancel

@@ -2,7 +2,7 @@
 // and the reporting year, plus the loaded data and a reload after every action.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from './auth.jsx'
-import { data, reload } from './data.js'
+import { data, reload, onReload } from './data.js'
 import { reportingYears } from './calculations.js'
 
 const AppState = createContext(null)
@@ -35,13 +35,13 @@ export function AppStateProvider({ children }) {
       await reload()
       setLoadError(null)
       setLoaded(true)
-      setVersion((v) => v + 1)
     } catch (err) {
       setLoadError(err.message || String(err))
       setLoaded(true)
     }
   }, [])
 
+  useEffect(() => onReload(() => setVersion((v) => v + 1)), [])
   useEffect(() => {
     refresh()
   }, [refresh])

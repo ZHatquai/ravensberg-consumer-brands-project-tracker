@@ -65,6 +65,7 @@ Seeded (spec §6): Zyad Hatquai, z.hatquai@sustainos.io, esg_lead · Zee, z.hatq
 | value | numeric(6,2) | not null, 0 < value ≤ 100; a percentage: reduction for emissions and water, diversion rate for waste |
 | set_by | uuid | → profiles.id |
 | active | boolean | not null, default true |
+| change_comment | text | the reason for the latest change; required on every change from a session (session 2, half B) |
 | updated_by | uuid | → profiles.id |
 | updated_at | timestamptz | not null, default now() |
 
@@ -168,7 +169,7 @@ Source: docs/access-matrix.md §6, one line per rule with its mechanism. "Me" = 
 | every table | nothing is deleted through the app: DELETE and TRUNCATE revoked from authenticated, no DELETE policy | grant | §7 rule 4 |
 | every table | a session writes `created_by`, `created_at`, `updated_by`, `updated_at` never by hand: the column triggers set them to me and now() | trigger | §6 lines 6, 9, 30 |
 | sites, targets | every active profile reads all rows | policy `sites_read`, `targets_read` | §6 line 41 |
-| sites, targets | the ESG lead creates, updates and deactivates; a site code and a target category never change; a site that projects, figures or users reference is not renamed | policies `sites_insert_esg`, `sites_update_esg`, `targets_insert_esg`, `targets_update_esg` + triggers `sites_protect`, `targets_protect` | §6 line 42 |
+| sites, targets | the ESG lead creates, updates and deactivates; a site code and a target category never change; a site that projects, figures or users reference is not renamed; a target change carries its reason (`change_comment`, builder decision at half B) | policies `sites_insert_esg`, `sites_update_esg`, `targets_insert_esg`, `targets_update_esg` + triggers `sites_protect`, `targets_protect` | §6 line 42 |
 | sites, targets | site user and CFO: no write | no policy | §6 line 43 |
 | profiles | a site user reads the profiles of their own site plus the ESG lead's; the CFO and the ESG lead read all | policy `profiles_read` | §6 lines 35, 36 |
 | profiles | nobody writes a profile from a session (no role, site or retired change, own row included); creation, role, site and retiring go only through the admin-users Netlify Function (secret key, caller verified as an active ESG lead, never the caller's own row) | no write policy + trigger `profiles_protect` + the function | §6 lines 37, 38 |
@@ -211,7 +212,7 @@ Default deny applies everywhere: where no line says yes, the answer is nothing. 
 | `reference_figures_protect` | reference_figures (before insert or update) | a session insert gets created_by, entered_by, updated_by = me; a session update may not change site_id, year, kind, status, created_by, created_at; sets entered_by and updated_by = me |
 | `reference_figures_write_history` | reference_figures (after insert or update) | one `created` row on insert; one row per changed figure column on update, with old and new value, the caller and the transaction comment |
 | `sites_protect` | sites (before insert or update) | refuses a change to `code`; refuses a rename while a project, figure or profile references the site; sets `updated_by`, `updated_at` |
-| `targets_protect` | targets (before insert or update) | refuses a change to `category`; sets `set_by` on insert, `updated_by`, `updated_at` |
+| `targets_protect` | targets (before insert or update) | refuses a change to `category`; from a session, refuses a change to value, base_year, target_year or active without a fresh `change_comment` (blank, or the same text as before, is refused), and an insert without one; sets `set_by` on insert, `updated_by`, `updated_at` |
 | `decisions_protect` | decisions (before insert or update) | refuses every write outside a transition function (`app_write_allowed()` false) |
 
 Platform default: event trigger `ensure_rls` (function `public.rls_auto_enable`) enables RLS on every new table in `public`. Left in place.
@@ -230,7 +231,7 @@ Every function below is `SECURITY DEFINER` with `SET search_path = ''` and schem
 | `require_me()`, `require_esg_lead()`, `require_comment(text)`, `begin_narrow(text)`, `lock_project(uuid)`, `owns_project(projects)`, `new_project_version(projects, uuid)`, `write_decision(…)` | definer | nobody directly (internal) | — | the shared steps of the transition functions: identity and role, the required comment, the transaction marker and comment, the row lock, ownership (own site, or group for the ESG lead), the n+1 copy, the decision row |
 | `endorse_project(p_project, p_comment)` | definer | ESG lead | active profile, role, comment, status Potential | → Pending approval; decision row (endorsement, Endorsed); history row |
 | `decline_project(p_project, p_comment)` | definer | ESG lead | role, comment, status Potential or Pending approval | → Declined; decision row (decline, Declined); history row |
-| `record_committee_decision(p_project, p_outcome, p_comment, p_attendees, p_decision_date)` | definer | ESG lead | role, outcome Approved or Declined, comment, attendees, date, status Pending approval | → Approved or Declined; decision row (committee); history row |
+| `record_committee_decision(p_project, p_outcome, p_comment, p_attendees, p_decision_date)` | definer | ESG lead | role, outcome Approved or Declined, comment, attendees, date not after today (Europe/Berlin), status Pending approval | → Approved or Declined; decision row (committee); history row |
 | `mark_project_obsolete(p_project, p_comment)` | definer | ESG lead | role, comment, status Approved | → Obsolete; decision row (obsolete); history row |
 | `reapprove_project(p_project, p_comment)` | definer | ESG lead | role, comment, status Approved, no newer version | copies the row as version n+1 in Potential (supersedes_project_id set), the Approved version → Obsolete with a decision row; returns the new id |
 | `resubmit_project(p_project)` | definer | the owner (site user for own site, ESG lead for group) | active profile, ownership, status Declined, no newer version | version n+1 in Potential, same project_code, linked; history row "Resubmission of the declined version"; returns the new id |
@@ -288,3 +289,5 @@ Verified on 9 October 2026 in the dashboard: the extension's full list is `SUPAB
 | 2 | 9 Oct 2026 | `20261009141108_access_functions.sql` | the narrow functions of §6 lines 10 and 12 to 20 and their internal helpers; EXECUTE revoked from public and anon, granted to authenticated on the ten RPCs only |
 | 2 | 9 Oct 2026 | `20261009142725_seed_demo_portfolio_1.sql` | demo portfolio part 1: seven profiles (six site users, one retired), 20 reference figures, 38 project rows (history triggers paused for the seed) |
 | 2 | 9 Oct 2026 | `20261009143326_seed_demo_portfolio_2.sql` | demo portfolio part 2: 57 decisions, 99 project_history rows; `project_code_seq` set to 37 |
+| 2 | 9 Oct 2026 | `20261009180520_committee_decision_date_not_in_future.sql` | half B finding: `record_committee_decision` refuses a decision date after today (Europe/Berlin) |
+| 2 | 9 Oct 2026 | `20261009180531_targets_change_comment.sql` | half B finding: `targets.change_comment`; `targets_protect` requires a fresh reason on every session change to a target |

@@ -4,14 +4,15 @@
 -- set on the seeded profile inside the transaction, the role is switched to authenticated (or anon) and the
 -- JWT claims carry that id, exactly as PostgREST does for a session. Results: see PROGRESS.md, Refusal test record.
 -- Re-run after any change to a policy, trigger or function; every row must read ok = true.
--- First run: 9 October 2026, session 2 — 119 cases, 119 ok.
+-- Runs: 9 Oct 2026 session 2, 119 cases ok; 9 Oct 2026 after the half B fixes (decision date, target reason), 126 cases ok.
+-- The read checks are relative (rows outside the caller's scope = none; own rows = some) so live data can drift.
 begin;
 create temp table results (n serial, label text, expected text, got text, ok boolean);
 update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000001' where email = 'z.hatquai@gmail.com';           -- Zee, site user 1200
 update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000002' where email = 'sustainatrend@gmail.com';        -- Sam, CFO
 update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000003' where email = 'z.hatquai@sustainos.io';        -- Zy, ESG lead
 update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000004' where email = 'dirk.sauer@ravensberg-cb.example';  -- Dirk, retired
-update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000005' where email = 'anke.rieger@ravensberg-cb.example'; -- Anke, site user 1000
+update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000005' where email = 'miriam.koch@ravensberg-cb.example'; -- Miriam, site user 1300 (Anke was retired and anonymised during half B)
 -- a0…09 = a login with no profile
 
 do $do$
@@ -28,19 +29,22 @@ begin
     ('retired (Dirk) reads projects', 'none', 'a0000000-0000-4000-8000-000000000004', $q$read:select * from public.projects$q$),
     ('retired (Dirk) reads figures', 'none', 'a0000000-0000-4000-8000-000000000004', $q$read:select * from public.reference_figures$q$),
     ('retired (Dirk) inserts a 1000 project', 'refused', 'a0000000-0000-4000-8000-000000000004', $q$insert into public.projects (title, category, scope, site_id, description, total_impact, annual_impact, unit, start_year, capex_eur, opex_eur_per_year, owner_name) values ('t', 'Emissions', 'site', (select id from public.sites where code = '1000'), 'd', 100, 10, 'tCO₂e per year', 2027, 0, 0, 'o')$q$),
-    ('Zee reads projects (1200 only)', 'rows 6', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.projects$q$),
+    ('Zee reads her site''s projects', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.projects where site_id = (select id from public.sites where code = '1200')$q$),
+    ('Zee reads no project outside 1200', 'none', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.projects where site_id is distinct from (select id from public.sites where code = '1200')$q$),
     ('Zee reads a 1000 project', 'none', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.projects where id = '72bba7f9-088b-597b-b270-54f925888ce6'$q$),
-    ('Zee reads figures (1200 only)', 'rows 3', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.reference_figures$q$),
-    ('Zee reads profiles (1200 + ESG lead)', 'rows 2', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.profiles$q$),
+    ('Zee reads her site''s figures', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.reference_figures where site_id = (select id from public.sites where code = '1200')$q$),
+    ('Zee reads no figure outside 1200', 'none', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.reference_figures where site_id is distinct from (select id from public.sites where code = '1200')$q$),
+    ('Zee reads 1200 profiles and the ESG lead', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.profiles where role = 'esg_lead'$q$),
+    ('Zee reads no other profile', 'none', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.profiles where role <> 'esg_lead' and site_id is distinct from (select id from public.sites where code = '1200')$q$),
     ('Zee reads decisions of a 1000 project', 'none', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.decisions where project_id = '72bba7f9-088b-597b-b270-54f925888ce6'$q$),
     ('Zee reads history of a 1000 project', 'none', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.project_history where project_id = '72bba7f9-088b-597b-b270-54f925888ce6'$q$),
     ('Zee reads decisions of a 1200 project', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.decisions where project_id = '1badd089-2050-5c09-b4d9-a40b250a11df'$q$),
-    ('Zee reads sites and targets', 'rows 11', 'a0000000-0000-4000-8000-000000000001', $q$read:select id from public.sites union all select id from public.targets$q$),
-    ('Sam reads all projects', 'rows 38', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from public.projects$q$),
-    ('Sam reads all figures', 'rows 20', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from public.reference_figures$q$),
-    ('Sam reads all profiles', 'rows 10', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from public.profiles$q$),
-    ('Zy reads all projects', 'rows 38', 'a0000000-0000-4000-8000-000000000003', $q$read:select * from public.projects$q$),
-    ('Zy reads all profiles', 'rows 10', 'a0000000-0000-4000-8000-000000000003', $q$read:select * from public.profiles$q$),
+    ('Zee reads sites and targets', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select id from public.sites union all select id from public.targets$q$),
+    ('Sam reads another site''s projects', 'some', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from public.projects where site_id = (select id from public.sites where code = '1000')$q$),
+    ('Sam reads another site''s figures', 'some', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from public.reference_figures where site_id = (select id from public.sites where code = '1000')$q$),
+    ('Sam reads other profiles', 'some', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from public.profiles where role = 'site_user'$q$),
+    ('Zy reads another site''s projects', 'some', 'a0000000-0000-4000-8000-000000000003', $q$read:select * from public.projects where site_id = (select id from public.sites where code = '1000')$q$),
+    ('Zy reads other profiles', 'some', 'a0000000-0000-4000-8000-000000000003', $q$read:select * from public.profiles where role = 'site_user'$q$),
     ('Zee inserts a 1000 project', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.projects (title, category, scope, site_id, description, total_impact, annual_impact, unit, start_year, capex_eur, opex_eur_per_year, owner_name) values ('t', 'Emissions', 'site', (select id from public.sites where code = '1000'), 'd', 100, 10, 'tCO₂e per year', 2027, 0, 0, 'o')$q$),
     ('Zee inserts a group project', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.projects (title, category, scope, site_id, description, total_impact, annual_impact, unit, start_year, capex_eur, opex_eur_per_year, owner_name) values ('t', 'Emissions', 'group', null, 'd', 100, 10, 'tCO₂e per year', 2027, 0, 0, 'o')$q$),
     ('Zee inserts a project as Approved', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.projects (title, category, scope, site_id, description, total_impact, annual_impact, unit, start_year, capex_eur, opex_eur_per_year, owner_name, status) values ('t', 'Emissions', 'site', (select id from public.sites where code = '1200'), 'd', 100, 10, 'tCO₂e per year', 2027, 0, 0, 'o', 'Approved')$q$),
@@ -72,7 +76,8 @@ begin
     ('Sam records a committee decision', 'refused', 'a0000000-0000-4000-8000-000000000002', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Approved', 'c', 'people', current_date)$q$),
     ('Zy records without attendees', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Approved', 'c', '', current_date)$q$),
     ('Zy records an outcome that is not Approved or Declined', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Endorsed', 'c', 'people', current_date)$q$),
-    ('Zy records Approved on Pending approval', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Approved', 'Approved.', 'Zyad, Sam, Katrin, Henning', current_date)$q$),
+    ('Zy records a decision dated tomorrow', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Approved', 'c', 'people', (now() at time zone 'Europe/Berlin')::date + 1)$q$),
+    ('Zy records Approved on Pending approval', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Approved', 'Approved.', 'Zyad, Sam, Katrin, Henning', (now() at time zone 'Europe/Berlin')::date)$q$),
     ('Zy records on a Potential project', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.record_committee_decision('b0000000-0000-4000-8000-000000000002', 'Approved', 'c', 'people', current_date)$q$),
     ('Zy declines a Potential project', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.decline_project('b0000000-0000-4000-8000-000000000001', 'Weak case')$q$),
     ('Zy declines an Approved project', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.decline_project('964082cf-2eb5-56c7-b691-885f9cac7df4', 'c')$q$),
@@ -89,7 +94,7 @@ begin
     ('Zee resubmits a 1000 Declined project', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$select public.resubmit_project('ce116942-e8c4-5a7a-b2cc-83aab108f280')$q$),
     ('Zee resubmits a version that was already resubmitted', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$select public.resubmit_project('cdcb5326-5f0e-5ef2-b7ca-54aea1193b10')$q$),
     ('Zee resubmits her own Declined project', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$select public.resubmit_project('b0000000-0000-4000-8000-000000000001')$q$),
-    ('Anke retires her own 1000 Declined project', 'ok', 'a0000000-0000-4000-8000-000000000005', $q$select public.retire_project('ce116942-e8c4-5a7a-b2cc-83aab108f280', 'Not pursued')$q$),
+    ('Miriam retires her own 1300 Declined project', 'ok', 'a0000000-0000-4000-8000-000000000005', $q$select public.retire_project('80797c33-db52-5066-98ab-e7843ceec567', 'Not pursued')$q$),
     ('Sam retires', 'refused', 'a0000000-0000-4000-8000-000000000002', $q$select public.retire_project('e9261aca-0a43-50a2-962d-9face40e695b', 'c')$q$),
     ('Zy resubmits his own Declined group project', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.resubmit_project('e9261aca-0a43-50a2-962d-9face40e695b')$q$),
     ('Zy retires it after the resubmission', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.retire_project('e9261aca-0a43-50a2-962d-9face40e695b', 'c')$q$),
@@ -102,19 +107,21 @@ begin
     ('Zee inserts a history row', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.project_history (project_id, field, new_value) values ('1badd089-2050-5c09-b4d9-a40b250a11df', 'x', 'y')$q$),
     ('Zee inserts a 1000 figure', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.reference_figures (site_id, year, kind, scope12_tco2e) values ((select id from public.sites where code = '1000'), 2026, 'actual', 1)$q$),
     ('Zee updates a 1000 figure', 'none', 'a0000000-0000-4000-8000-000000000001', $q$update public.reference_figures set scope12_tco2e = 1 where id = '2d515415-efb2-54a4-a217-33a2df18708a'$q$),
-    ('Zee inserts a 1200 figure (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.reference_figures (site_id, year, kind, scope12_tco2e, water_withdrawal_m3) values ((select id from public.sites where code = '1200'), 2026, 'actual', 11900, 90000)$q$),
+    ('Zee inserts a 1200 figure (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.reference_figures (site_id, year, kind, scope12_tco2e, water_withdrawal_m3) values ((select id from public.sites where code = '1200'), 2099, 'actual', 11900, 90000)$q$),
     ('Zee updates a 1200 figure (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$update public.reference_figures set water_withdrawal_m3 = 95000 where id = '38f8e1d6-34eb-52e8-ac5d-91abcc2cd3a2'$q$),
     ('Zee reads the history of her figure', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.reference_figures_history where reference_figure_id = '38f8e1d6-34eb-52e8-ac5d-91abcc2cd3a2'$q$),
     ('Zee moves a figure to another site', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update public.reference_figures set site_id = (select id from public.sites where code = '1000') where id = '38f8e1d6-34eb-52e8-ac5d-91abcc2cd3a2'$q$),
     ('Sam updates a figure', 'none', 'a0000000-0000-4000-8000-000000000002', $q$update public.reference_figures set scope12_tco2e = 1 where id = '2d515415-efb2-54a4-a217-33a2df18708a'$q$),
-    ('Sam inserts a figure', 'refused', 'a0000000-0000-4000-8000-000000000002', $q$insert into public.reference_figures (site_id, year, kind, scope12_tco2e) values ((select id from public.sites where code = '1000'), 2027, 'actual', 1)$q$),
-    ('Zy inserts a figure for 1500 (any site)', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$insert into public.reference_figures (site_id, year, kind, output_t) values ((select id from public.sites where code = '1500'), 2030, 'plan', 60000)$q$),
+    ('Sam inserts a figure', 'refused', 'a0000000-0000-4000-8000-000000000002', $q$insert into public.reference_figures (site_id, year, kind, scope12_tco2e) values ((select id from public.sites where code = '1000'), 2099, 'actual', 1)$q$),
+    ('Zy inserts a figure for 1500 (any site)', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$insert into public.reference_figures (site_id, year, kind, output_t) values ((select id from public.sites where code = '1500'), 2099, 'plan', 60000)$q$),
     ('Zy updates a 1000 figure (any site)', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$update public.reference_figures set scope12_tco2e = 18500 where id = '2d515415-efb2-54a4-a217-33a2df18708a'$q$),
     ('Zee deletes a figure', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$delete from public.reference_figures where id = '38f8e1d6-34eb-52e8-ac5d-91abcc2cd3a2'$q$),
-    ('Zee updates a target', 'none', 'a0000000-0000-4000-8000-000000000001', $q$update public.targets set value = 50 where category = 'emissions'$q$),
-    ('Sam updates a target', 'none', 'a0000000-0000-4000-8000-000000000002', $q$update public.targets set value = 50 where category = 'emissions'$q$),
-    ('Zy updates a target value', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$update public.targets set value = 45 where category = 'emissions'$q$),
-    ('Zy changes a target category', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$update public.targets set category = 'x' where category = 'emissions'$q$),
+    ('Zee updates a target', 'none', 'a0000000-0000-4000-8000-000000000001', $q$update public.targets set value = 50, change_comment = 'x' where category = 'emissions'$q$),
+    ('Sam updates a target', 'none', 'a0000000-0000-4000-8000-000000000002', $q$update public.targets set value = 50, change_comment = 'x' where category = 'emissions'$q$),
+    ('Zy updates a target value without a reason', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$update public.targets set value = 45 where category = 'emissions'$q$),
+    ('Zy updates a target value with a reason', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$update public.targets set value = 45, change_comment = 'Board decision, test' where category = 'emissions'$q$),
+    ('Zy changes it again with the same reason repeated', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$update public.targets set value = 46, change_comment = 'Board decision, test' where category = 'emissions'$q$),
+    ('Zy changes a target category', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$update public.targets set category = 'x', change_comment = 'c' where category = 'emissions'$q$),
     ('Zee updates a site', 'none', 'a0000000-0000-4000-8000-000000000001', $q$update public.sites set city = 'x' where code = '1200'$q$),
     ('Zee inserts a site', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.sites (code, name, city, type) values ('1900', 'n', 'c', 't')$q$),
     ('Sam updates a site', 'none', 'a0000000-0000-4000-8000-000000000002', $q$update public.sites set city = 'x' where code = '1200'$q$),
@@ -133,7 +140,7 @@ begin
     ('Zy inserts a profile directly', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$insert into public.profiles (email, name, role) values ('x@example.com', 'x', 'cfo')$q$),
     ('Zy deletes a profile', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$delete from public.profiles where email = 'dirk.sauer@ravensberg-cb.example'$q$),
     ('Zee anonymises', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$select public.anonymise_person('7d4eb238-4ce7-5cea-8a37-992881714c45', 'Dirk Sauer')$q$),
-    ('Zy anonymises an active user', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.anonymise_person('e10eb550-21fc-58c5-82ed-d7abd6a4d03d', 'Anke Rieger')$q$),
+    ('Zy anonymises an active user', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.anonymise_person('caa6b15f-230c-53dd-84ac-625267e300b0', 'Tobias Wendt')$q$),
     ('Zy anonymises himself', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.anonymise_person((select id from public.profiles where email = 'z.hatquai@sustainos.io'), 'Zyad Hatquai')$q$),
     ('Zy anonymises a retired user', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.anonymise_person('7d4eb238-4ce7-5cea-8a37-992881714c45', 'Dirk Sauer')$q$),
     ('after anonymisation no owner_name Dirk Sauer remains', 'none', 'a0000000-0000-4000-8000-000000000003', $q$read:select * from public.projects where owner_name = 'Dirk Sauer'$q$)
@@ -158,6 +165,9 @@ begin
     end;
     execute 'reset role';
     perform set_config('request.jwt.claims', '', true);
+    -- a narrow function marks its transaction; PostgREST ends the transaction with the request, this harness runs every case in one, so clear the mark by hand
+    perform set_config('app.narrow_function', '', true);
+    perform set_config('app.change_comment', '', true);
     v_ok := case
       when r.expect = 'refused' then v_got like 'refused%'
       when r.expect = 'ok' then v_got like 'ok %' and v_got <> 'ok 0'

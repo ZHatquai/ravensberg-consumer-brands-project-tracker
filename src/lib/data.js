@@ -10,6 +10,13 @@ export const profileById = {}
 export const targetByCategory = {}
 export const sitesSorted = []
 
+const listeners = new Set()
+/** Called after every successful reload (an action, a refresh); the app state bumps its version so every screen recalculates. */
+export function onReload(fn) {
+  listeners.add(fn)
+  return () => listeners.delete(fn)
+}
+
 const TABLES = [
   ['sites', 'sites', 'code'],
   ['profiles', 'profiles', 'name'],
@@ -43,6 +50,7 @@ export async function reload() {
   reindex(profileById, data.profiles)
   reindex(targetByCategory, data.targets, 'category')
   refill(sitesSorted, [...data.sites].sort((a, b) => a.code.localeCompare(b.code)))
+  for (const fn of listeners) fn()
   return data
 }
 

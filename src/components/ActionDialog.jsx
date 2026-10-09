@@ -6,8 +6,11 @@ import { Modal } from './ui.jsx'
  * `comment` is false; attendees and date for the committee), Confirm and Cancel. `onConfirm` receives the values and
  * may throw; the message is shown in the dialog.
  */
+/** Today in the person's local day as YYYY-MM-DD (a committee in Germany at 23:30 is still today). */
+const localToday = () => new Date().toLocaleDateString('en-CA')
+
 export function ActionDialog({ title, intro, confirmLabel = 'Confirm', comment = true, attendees = false, date = false, extra = null, onConfirm, onClose, danger = false }) {
-  const [values, setValues] = useState({ comment: '', attendees: '', decision_date: new Date().toISOString().slice(0, 10) })
+  const [values, setValues] = useState({ comment: '', attendees: '', decision_date: localToday() })
   const [state, setState] = useState({ status: 'idle' })
   const set = (k) => (e) => setValues((v) => ({ ...v, [k]: e.target.value }))
   const submit = async (e) => {
@@ -15,6 +18,7 @@ export function ActionDialog({ title, intro, confirmLabel = 'Confirm', comment =
     if (comment && !values.comment.trim()) return setState({ status: 'error', message: 'A comment is required.' })
     if (attendees && !values.attendees.trim()) return setState({ status: 'error', message: 'The people in the room are required.' })
     if (date && !values.decision_date) return setState({ status: 'error', message: 'The decision date is required.' })
+    if (date && values.decision_date > localToday()) return setState({ status: 'error', message: 'The decision date cannot be in the future.' })
     setState({ status: 'working' })
     try {
       await onConfirm({ comment: values.comment.trim(), attendees: values.attendees.trim(), decision_date: values.decision_date, ...(extra?.values || {}) })
@@ -41,7 +45,7 @@ export function ActionDialog({ title, intro, confirmLabel = 'Confirm', comment =
             <label className="rb-label" htmlFor="decision_date">
               Decision date
             </label>
-            <input id="decision_date" type="date" className="rb-input" value={values.decision_date} onChange={set('decision_date')} />
+            <input id="decision_date" type="date" className="rb-input" value={values.decision_date} max={localToday()} onChange={set('decision_date')} />
           </div>
         )}
         {comment && (

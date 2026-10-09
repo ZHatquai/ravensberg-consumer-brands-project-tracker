@@ -3,7 +3,7 @@
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
 **Session:** 1
-**Last updated:** 9 October 2026 — session 1, Claude Code (after the builder's first walkthrough of the live site)
+**Last updated:** 9 October 2026 — session 1, Claude Code (spec bumped to v1.2 with the builder's answers)
 **Live URL:** https://sustainability-project-tracker.netlify.app (the Netlify site connected to the repo; the builder walked through the live tool on 9 Oct 2026; confirm the address if the site uses another domain) [Rule: fill in after the first successful deploy]
 **Stage:** second screen and access design [Rule: one of — business logic and database / second screen and access design / login and access rules together / deploy and maintain. Advance it when that stage's items are absorbed into Current state. Decided by what exists, never by a week or a version number.]
 **Supabase project:** ravensberg-consumer-brands, ref bqyjulvljqafubusplgm, URL https://bqyjulvljqafubusplgm.supabase.co, region eu-central-1, Free plan. Seven tables with RLS on and no policy; seeds only (sites 7, profiles 3, targets 4); eight migrations applied and saved in supabase/migrations/. No Auth. [Rule: the only place project state is recorded; CLAUDE.md never carries it]
@@ -23,16 +23,15 @@ Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empt
 [Rule: 3–5 lines maximum. Replace each session.]
 
 ## Remaining work
-- [ ] Builder: report whether the key values written by the Supabase extension start with `sb_` or `eyJ` (if `eyJ`: paste the publishable key by hand and add "rotate the secret key" to the Backlog); the extension is connected with the Vite preset
-- [ ] Builder: merge the follow-up commits on branch `claude/elegant-pasteur-s4jgz3` (PROGRESS.md after the merge; the ESG lead form rule) into main
-- [ ] Builder: confirm Zee's site (1200 Werk Paderborn assumed) and review the four points carried to the full run in docs/access-matrix.md
-- [ ] Builder: verify mail.sustainos.io in Resend and have the SMTP settings ready for Supabase → Auth (before the access phase)
-- [ ] Run the Access Architect's full run (docs/supabase-setup.md exists): it adds the named people, ownership, states, actions and the policy plan to docs/access-matrix.md and docs/user-stories.md; Governor in Iteration Mode; then the Login screen, the login, the rules, the narrow functions, the admin user-creation Netlify Function and every screen's actions are built together, and every screen switches from its fixture file to the real rows as the signed-in user; the "View as" switch is removed
+- [ ] Builder: the extension wrote legacy `eyJ` keys. In Netlify (Site configuration → Environment variables) replace the value of `VITE_SUPABASE_ANON_KEY` with the publishable key from the Supabase dashboard (Project Settings → API Keys, `sb_publishable_…`), then trigger a deploy. Leave `SUPABASE_SERVICE_ROLE_KEY` for now (see Backlog)
+- [ ] Builder: merge the follow-up commits on branch `claude/elegant-pasteur-s4jgz3` (PROGRESS.md after the merge; the ESG lead form rule; spec v1.2) into main
+- [ ] Project Governor in Iteration Mode on spec v1.2 (the governed version in CLAUDE.md is still v1.1, so the next build session stops at its step 2 until this is done); planned together with the step below
+- [ ] Builder: verify mail.sustainos.io in Resend and have the SMTP settings ready for Supabase → Auth (the builder will do this once the roles exist; until then the magic link can be tested with Supabase's built-in mailer, rate-limited, testing only)
+- [ ] Run the Access Architect's full run on spec v1.2 (docs/supabase-setup.md exists; the four carried points are answered in the spec): it adds the named people, ownership, states, actions and the policy plan to docs/access-matrix.md and docs/user-stories.md; Governor in Iteration Mode; then the Login screen, the login, the rules, the narrow functions, the admin user-creation Netlify Function and every screen's actions are built together, and every screen switches from its fixture file to the real rows as the signed-in user; the "View as" switch is removed
 - [ ] Reference figures and the 37 demo projects into the real tables (data fix or seed migration, decided in the access phase) so the deployed tool shows the demo portfolio
 - [ ] Builder: local test pass — full walkthrough of every view on fixture data before deploying (Claude Code did one in headless Chromium; a human pass is still due)
 - [ ] Acceptance criteria pass — spec §13: on fixture data, 2, 3, 4 (except row actions), 5 (validation), 8, 9, 10, 11, 14, 15 and 16 (no notice, no checkbox, no privacy page) are met; 1, 6, 7, 12 (edits), 13, 17 and 18 wait for the access phase and the deploy
 - [ ] Builder: keep the Supabase project active, or upgrade to Pro (manual billing step), for the workshop week; Free has no backups and pauses when idle
-- [ ] Builder: have the Tool Architect bump the spec (v1.2) for the ESG lead rule below, and the Access Architect's full run carry it as a create rule on `projects` (esg_lead creates scope = group rows only)
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
@@ -47,24 +46,27 @@ Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empt
 - "Both target lines" on the water intensity chart = the intensity target (−20 %) and the absolute target (−10 % withdrawal) expressed as intensity over the planned output (session 1).
 - Water intensity, site missing a 2030 plan: output held flat at FY2024 and labelled estimate (spec §9); waste: a 2030 plan row with waste_total_t replaces the latest total as the denominator (session 1).
 - Fixture profiles include seven made-up site users and one retired user beyond the three seeded people, so every fixture project has a submitter; the seeded table holds the three only (session 1).
-- The ESG lead registers group projects only; a site's projects are registered by the site. Builder decision after the first walkthrough (9 Oct 2026); spec v1.1 §2, §5 and §8 still say "Group or a site for the ESG lead", so the spec needs a bump and the full run carries it as a create rule. Screen-side only until then (session 1).
+- The ESG lead registers group projects only; a site's projects are registered by the site. Builder decision after the first walkthrough (9 Oct 2026), written into spec v1.2; the full run carries it as a create rule. Screen-side only until then (session 1).
+- An Approved project is never edited in place: a change is a re-approval, a new version in Potential with the approved version Obsolete, out of every target figure until approved again; the ESG lead edits figures only while Pending approval (builder, 9 Oct 2026, spec v1.2). Nothing to build until the access phase: the calculations already drop a superseded version from every figure.
+- Spec v1.2 was written by Claude Code from the builder's confirmed answers, not through the Tool Architect; the Governor's iteration on it is still due (session 1).
 - The "View as" switch and the sessionStorage that remembers it, the site and the year are screen conveniences for the fixture phase; they are not a rule and are removed in the access phase (session 1).
 - Chart palette is the brand's binding encoding (green approved, taupe pending, hatched gap or declined, grey anchors); because taupe and grey fail the dataviz contrast checks, every chart carries direct labels, a legend and the register as its table view (session 1).
 - PDF fonts: Montserrat SemiBold/Bold and Source Sans 3 Regular/SemiBold TTFs (Google Fonts, OFL) in public/fonts/, loaded only when a pack is generated; jsPDF is loaded on demand so it stays out of the main bundle (session 1).
 [Rule: one line per decision made during the build that is not in the spec. Future sessions depend on these to stay consistent.]
 
 ## Known issues
-- Spec v1.1 and the ESG lead form rule disagree (see Build decisions); the spec bump is on the builder's list.
+- CLAUDE.md governs spec v1.1 while docs/product-spec.md is v1.2: the Session Protocol stops the next build session until the Project Governor has iterated CLAUDE.md. Intended: the Governor's iteration is the next step after the Access Architect's full run.
+- Legacy `eyJ` key values in Netlify until the builder pastes the publishable key (Remaining work) and the secret key is replaced (Backlog).
 - The Supabase extension also writes `SUPABASE_JWT_SECRET`, not in the spec's list; nothing uses it. Recorded in docs/supabase-setup.md §8.
-- Zee's site assumed 1200 Werk Paderborn in the seeded profile and the fixtures; confirm before the Access Architect's full run (spec §15).
 - status on decisions and reference_figures defaults to 'active'; the full run fixes the other values (the calculations skip rows with status 'void').
-- Carried to the full run (access-matrix.md): Approved is final but the ESG lead edits approved figures; Users screen changes role and site; reference_figures needs a history table; Zee's site.
+- Still carried to the full run: `reference_figures_history` (schema delta). The other carried points are answered in spec v1.2.
 - Legacy API keys not checked yet (no Netlify connection in session 1); check on the first live build.
 - The Supabase security advisor reports "RLS enabled, no policy" on all seven tables: intended until the full run.
 - Review pack tables overflow onto extra pages when a year holds more approved projects or decisions than fit; the footer numbers all pages.
 [Rule: bugs, edge cases, and deferred fixes. One line each. Remove when resolved.]
 
 ## Backlog
+- Rotate the secret key: replace the legacy `SUPABASE_SERVICE_ROLE_KEY` value in Netlify by hand with the secret key (`sb_secret_…`) before the access phase deploys the admin user-creation function, and in any case before the end of 2026 when the legacy keys retire (found 9 Oct 2026)
 - Suppliers: invite, login, submit, two approvals — next build, validate the internal tool first
 - Supplier-programme / Scope 3 target — next build, with the suppliers
 - Integration with the environmental reporting tool for reference figures — later; manual entry in v1

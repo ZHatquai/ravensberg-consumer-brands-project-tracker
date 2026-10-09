@@ -1,6 +1,6 @@
 # Product Spec — Ravensberg Project Tracker
 
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 9 October 2026
 **Author:** Zyad Hatquai
 **Status:** Confirmed
@@ -70,8 +70,8 @@ This section defines the architecture of the tool. Every downstream decision fol
 
 | Role name | Who this is | Named first holder (name, work email) | What they can see | What they can do |
 |-----------|------------|----------------------------------------|-------------------|-----------------|
-| Site user | The EHS manager and/or site manager of one site (one or both per site, depending on the site). Belongs to exactly one site. | Zee, z.hatquai@gmail.com, site 1200 Werk Paderborn (site to confirm, see Section 15) | Their own site only: its projects in every status, its reference figures, its share of each target and its pathway. Never another site, never the group view. | Register a project for their site; edit it while it is Potential; resubmit or retire a Declined project; enter and update their site's reference figures; export the CSV of their own site's register. |
-| ESG lead (admin) | The one global ESG lead in Group Sustainability. The tool's admin. | Zyad Hatquai, z.hatquai@sustainos.io | Everything: all sites, the group overview, every project, every figure, every user. | Register group-level projects (not tied to a site); endorse a Potential project to Pending approval; decline at either stage with a comment; record the committee decision (Approved or Declined, with comment, people in the room, date); mark an Approved project Obsolete with a comment; change any project figure with a comment; set the group targets; edit any reference figure; add users, assign role and site, retire users; export CSV and the PDF review pack. |
+| Site user | The EHS manager and/or site manager of one site (one or both per site, depending on the site). Belongs to exactly one site. | Zee, z.hatquai@gmail.com, site 1200 Werk Paderborn (confirmed by the builder, 9 October 2026) | Their own site only: its projects in every status, its reference figures, its share of each target and its pathway. Never another site, never the group view. | Register a project for their site; edit it while it is Potential; resubmit or retire a Declined project; enter and update their site's reference figures; export the CSV of their own site's register. |
+| ESG lead (admin) | The one global ESG lead in Group Sustainability. The tool's admin. | Zyad Hatquai, z.hatquai@sustainos.io | Everything: all sites, the group overview, every project, every figure, every user. | Register group-level projects only (never for a site: each site registers its own); endorse a Potential project to Pending approval; decline at either stage with a comment; record the committee decision (Approved or Declined, with comment, people in the room, date); mark an Approved project Obsolete with a comment; start a re-approval of an Approved project (a new version in Potential, the approved version Obsolete); change a figure with a comment while a project is Pending approval; set the group targets; edit any reference figure; add users, assign role and site, retire users; export CSV and the PDF review pack. |
 | CFO | The group CFO (Group Management Board). | Sam, sustainatrend@gmail.com | Everything, read-only: all sites, the group overview, every project and its history. | Filter and read; export CSV and the PDF review pack. No edits, no decisions. |
 
 > The named first holder is what the Access Architect reads; a group is not an answer. For a public tool with a reading screen planned later, name the first reader here now, so the database is built ready for the login.
@@ -187,8 +187,8 @@ This section is the input Claude Code uses to build the database schema via MCP.
 | project_code | Project ID shown on screen, e.g. PRJ-0041 | Text, generated in sequence | Automatic | Yes |
 | title | Project title | Text | Site user or ESG lead | Yes |
 | category | Emissions / Water / Waste | Choice | Site user or ESG lead | Yes |
-| scope | Site project or group project | Choice | Automatic: site for a site user, chosen by the ESG lead | Yes |
-| site_id | Site the project belongs to (empty for a group project) | Reference to sites | Automatic for a site user; ESG lead chooses or leaves empty | Yes for site projects |
+| scope | Site project or group project | Choice | Automatic: site for a site user, group for the ESG lead | Yes |
+| site_id | Site the project belongs to (empty for a group project) | Reference to sites | Automatic for a site user; empty for the ESG lead, who registers group projects only | Yes for site projects |
 | description | What the project is and how it delivers the impact | Long text | Site user or ESG lead | Yes |
 | total_impact | Total impact over the project's life, in the category unit | Number | Site user or ESG lead | Yes |
 | annual_impact | Annual impact at full run rate, in the category unit | Number, greater than zero | Site user or ESG lead | Yes |
@@ -234,7 +234,7 @@ This section is the input Claude Code uses to build the database schema via MCP.
 | Detail | Answer |
 |--------|--------|
 | Main record | One row = one project version |
-| States, in order | Potential → Pending approval → Approved; Declined from Potential (ESG lead) or from Pending approval (committee); from Declined the site creates a new version (back to Potential) or sets Retired; from Approved the ESG lead can set Obsolete. Final states: Approved, Retired, Obsolete. Declined is final for that version; the resubmission is a new version linked by supersedes_project_id. |
+| States, in order | Potential → Pending approval → Approved; Declined from Potential (ESG lead) or from Pending approval (committee); from Declined the site creates a new version (back to Potential) or sets Retired; from Approved the ESG lead can set Obsolete, or start a re-approval: the approved version becomes Obsolete with a comment and a new version is saved in Potential (linked by supersedes_project_id), so the project leaves every target figure until it is approved again. Final states: Approved, Retired, Obsolete; a row in a final state is never edited in place. Declined is final for that version; the resubmission is a new version linked by supersedes_project_id. |
 | Login-ready columns | Seeded by the Governor on every record table from day one: `created_by` (empty until a login exists), `status`, `created_at`, `updated_by`, `updated_at`; plus `profiles` whenever Section 6 names a login target. |
 
 **File storage:** No
@@ -268,7 +268,7 @@ Name the roles and what each one broadly does, in plain language. Do NOT put a r
 | Role | What they broadly see and do |
 |------|------------------------------|
 | Site user | Sees only their own site: its projects, its reference figures, its share of each target. Registers projects for their site, edits them while Potential, resubmits or retires Declined ones, enters their site's reference figures, exports their site's CSV. Cannot decide, cannot see other sites or the group view. |
-| ESG lead (admin) | Sees everything. Registers group projects, endorses, declines, records committee decisions, marks Obsolete, edits any figure with a comment, sets targets, edits reference figures, exports CSV and the review pack. The four admin actions: adds users and assigns role and site, retires users (never deletes), maintains the sites and targets lists, can retire or obsolete any record; reads all. |
+| ESG lead (admin) | Sees everything. Registers group projects only, endorses, declines, records committee decisions, marks Obsolete, starts re-approvals of Approved projects, edits a figure with a comment while a project is Pending approval, sets targets, edits reference figures, exports CSV and the review pack. The four admin actions: adds users and assigns role and site, retires users (never deletes), maintains the sites and targets lists, can retire or obsolete any record; reads all. |
 | CFO | Sees everything, changes nothing. Filters, reads project pages and history, exports CSV and the review pack. |
 
 > The row-level access rules live in `access-matrix.md`, produced by the Access Architect for every tool that has a database: a short run the moment this spec goes to D3 (the write-only rules, before the database exists) and a full run against the real tables once someone will log in. Claude Code builds every line of its policy plan with the mechanism that line names (a policy, a trigger, a narrow function, a bucket policy, or the screen), and the login together with them when there is one; the Governor lifts its hard rules into CLAUDE.md and reads every rule from the matrix. This section does not duplicate the grid.
@@ -330,13 +330,13 @@ List every page or view in the tool. For each one, describe what is on it and wh
 
 - **Purpose:** One project: everything about it, its history, and the actions the role has.
 - **What is visible:** Title, project ID, version and the version it supersedes (if any), status with its dot, category, scope, site, owner name, description, total impact, annual impact with unit, start year, capex, opex, submitted by and on. Decisions: each decision with stage, outcome, date, people in the room, comment, recorded by. History: every field change with old value, new value, who, when, comment. Action bar by role and status (below).
-- **User actions:** Site user: Edit (Potential only); Resubmit (Declined: opens the form pre-filled, saves as a new version in Potential); Retire (Declined: comment required). ESG lead: Edit figures (any status after Potential, comment required); Endorse (Potential → Pending approval, comment required); Decline (Potential or Pending approval, comment required); Record committee decision (Pending approval → Approved or Declined: comment, people in the room, decision date, all required); Mark obsolete (Approved → Obsolete, comment required). CFO: none.
+- **User actions:** Site user: Edit (Potential only); Resubmit (Declined: opens the form pre-filled, saves as a new version in Potential); Retire (Declined: comment required). ESG lead: Edit figures (Pending approval only, comment required); Endorse (Potential → Pending approval, comment required); Decline (Potential or Pending approval, comment required); Record committee decision (Pending approval → Approved or Declined: comment, people in the room, decision date, all required); Mark obsolete (Approved → Obsolete, comment required); Re-approve (Approved: opens the form pre-filled, saves a new version in Potential and marks the approved version Obsolete with a comment; the project counts in no target figure until the new version is approved). CFO: none.
 - **What happens next:** Every action writes a decision row and/or history rows and updates the status; the page reloads with the new state. A Declined project becomes read-only for the ESG lead and editable through Resubmit for the site.
 
 ### New project form
 
 - **Purpose:** Register a project.
-- **What is visible:** Title, category (Emissions / Water / Waste), site (fixed to the user's site for a site user; "Group" or a site for the ESG lead), description, total impact, annual impact, the unit shown from the category, start year, capex, opex, owner name. Inline validation messages. "Submit" and "Cancel".
+- **What is visible:** Title, category (Emissions / Water / Waste), site (fixed to the user's site for a site user; fixed to Group for the ESG lead, who registers group projects only), description, total impact, annual impact, the unit shown from the category, start year, capex, opex, owner name. Inline validation messages. "Submit" and "Cancel".
 - **User actions:** Fill in, submit.
 - **What happens next:** The project is saved in Potential with version 1 and a new project ID, and the Project page opens. Validation: all fields required; annual impact greater than zero; total impact at least the annual impact; start year between 2024 and 2030 (a later start year is accepted with a warning that it contributes nothing to 2030).
 
@@ -379,6 +379,7 @@ List every page or view in the tool. For each one, describe what is on it and wh
 - Potential, Declined, Retired and Obsolete projects never count in any target figure. They appear only in the status counts. An Obsolete project is removed from every year of the pathway, not only from the year it became obsolete; its history stays.
 - A project counts its full annual impact in every year from its start year to 2030 (no ramp-up). A start year after 2030 contributes nothing to any 2030 figure.
 - A site project counts for its site and for the group. A group project counts for the group only.
+- A project under re-approval (its approved version Obsolete, its new version Potential or Pending approval) counts as Potential or "if approved", never as covered, until the new version is approved.
 
 *Site share of a group target.* Every target is applied to each site's own base-year figure, no weighting: a site's required reduction = the target percentage × that site's FY2024 figure. The group's required reduction is the sum over sites; for intensity the group figure is group withdrawal ÷ group output. Group projects count against the group's required reduction only.
 
@@ -454,6 +455,8 @@ List every external service this tool connects to.
 
 No AI key, no Resend variable in Netlify (Resend lives in Supabase Auth's SMTP settings), no Turnstile (not a public tool).
 
+> **Checked on the first live build, 9 October 2026:** the extension (Vite preset) wrote `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` and `SUPABASE_JWT_SECRET` (the last one is not used by this tool). Both key values start with `eyJ`: the legacy keys. The publishable key is pasted by hand into `VITE_SUPABASE_ANON_KEY`; replacing `SUPABASE_SERVICE_ROLE_KEY` with the secret key (`sb_secret_…`) is a dated item, due before the access phase's admin function uses it and in any case before the legacy keys retire at the end of 2026.
+
 > The Supabase variable names and values above are recorded from the extension's documentation and are **verified on the first live build**; if the extension writes different names or legacy values, this table, the Governor's template and supabase-setup.md are corrected in the same session. Supabase issues two key systems today. The new **publishable** and **secret** keys (`sb_publishable_…`, `sb_secret_…`) are what this tool uses. The older **anon** and **service_role** keys are a separate system that still works on projects where it is enabled and is being retired by the end of 2026. The variable names above are historical and stay as the extension writes them; what matters is the value. After connecting the extension the builder looks at the values once: `sb_` is right; `eyJ` means the legacy keys were written, and then the publishable key is pasted in by hand (it is public) while rotating the secret key is a dated handover item. If a build ever shows "Legacy API keys disabled", an old key value is in use somewhere. The Project Governor derives its environment-variable list from this table and from nothing else.
 
 **Credentials readiness — filled during the architect interview for every active arm:**
@@ -480,7 +483,7 @@ List everything this build will NOT include. Be explicit. Claude Code will not b
 | Integration with the environmental reporting tool for the reference figures (Scope 1 + 2, withdrawal, output, waste) | Later. Figures are entered by hand in version 1. |
 | Notification emails (project submitted, decision recorded) and reminders for projects waiting too long | Backlog. Requires the email arm and a scheduled function; the register is the notification of record. |
 | AI assistance (checking a submission for completeness, summarising a site's portfolio) | Backlog. Validate core tool first. |
-| Change requests on Approved projects raised by sites | Backlog. In version 1 only the ESG lead changes an approved figure, with a comment. |
+| Change requests on Approved projects raised by sites | Backlog. In version 1 only the ESG lead starts a re-approval of an Approved project; nobody edits an approved figure in place. |
 | File uploads (evidence documents on a project) | Not needed to validate the idea. No storage bucket in version 1. |
 | Microsoft OAuth / SSO login | Handover package, upgrade path. |
 
@@ -497,8 +500,8 @@ List the conditions that define this build as complete and ready to deploy. Clau
 | 3 | Overview, site view (site user) | Only the user's own site appears; no site selector; figures match the site's rows and its share of each target | [ ] |
 | 4 | Project register | Pending approval rows first; filters apply; days waiting correct; row actions visible only to the ESG lead | [ ] |
 | 5 | New project form | All validation rules in Section 8 enforced; a saved project is in Potential, version 1, with a sequential project ID, and opens on the Project page | [ ] |
-| 6 | Status flow | Potential → Pending approval (Endorse, comment required) → Approved or Declined (committee decision: comment, people in the room, date required); Decline at Potential; Declined → new version in Potential (Resubmit) or Retired; Approved → Obsolete; every transition writes a decision row and history rows naming the user and the time | [ ] |
-| 7 | Editing rules | A site user edits only while Potential; from Pending approval the form is locked for the site; the ESG lead's edits after Potential require a comment and appear in the history with old and new value | [ ] |
+| 6 | Status flow | Potential → Pending approval (Endorse, comment required) → Approved or Declined (committee decision: comment, people in the room, date required); Decline at Potential; Declined → new version in Potential (Resubmit) or Retired; Approved → Obsolete; Approved → re-approval (new version in Potential, approved version Obsolete); every transition writes a decision row and history rows naming the user and the time | [ ] |
+| 7 | Editing rules | A site user edits only while Potential; from Pending approval the form is locked for the site; the ESG lead edits figures only while Pending approval, with a comment that appears in the history with old and new value; an Approved project is never edited in place, only re-approved as a new version | [ ] |
 | 8 | Target logic, emissions | For a seeded site: required = 42 % of FY2024 Scope 1 + 2; covered = Σ Approved annual impact active in 2030; pending and gap as in Section 9; the bridge bars sum to the target; a project with start year 2031 contributes nothing | [ ] |
 | 9 | Target logic, water | Absolute: 10 % of FY2024 withdrawal; intensity: projected 2030 = (withdrawal − savings) ÷ planned output, straight-line output; both target lines on the chart; site 1100 excluded from the group intensity | [ ] |
 | 10 | Target logic, waste | Per site rate from the latest actual year; projected rate with approved and with pending; count of sites at ≥95 % correct; rate capped at 100 % and flagged | [ ] |
@@ -573,7 +576,7 @@ List anything that remains unresolved. Tag who needs to answer it before or duri
 
 | Question | Who answers it | Blocking? |
 |----------|---------------|-----------|
-| Which site does the first site user (Zee) belong to? The spec assumes 1200 Werk Paderborn. | Builder | Yes — before the Access Architect's full run |
+| Which site does the first site user (Zee) belong to? Answered 9 October 2026: 1200 Werk Paderborn. | Builder | Answered |
 | The Resend sending subdomain (name, for example mail.sustainos.io) and the SMTP settings in the Supabase dashboard. | Builder | Yes — before Stage 3 |
 | The Free plan pauses the project after about a week unused: confirm it is active, or on Pro, the week of the three workshop sessions. | Builder | Yes — before the workshop |
 | The absolute water target (−10 % withdrawal by 2030 vs FY2024) is new to the Ravensberg canon; write it into company-profile.md (change the company fact first, then the use cases). | Builder | No |
@@ -593,6 +596,7 @@ Bump the version whenever the spec changes: new arm added, access model changes,
 |---------|------|--------------------------|
 | v1.0 | 9 October 2026 | Initial build |
 | v1.1 | 9 October 2026 | PDF review pack moved from a Netlify Function to the browser (framework rule: exports are browser only); the secret key's only use is the admin user-creation function. Decided with the Project Governor. |
+| v1.2 | 9 October 2026 | After the builder's first walkthrough of the live tool: the ESG lead registers group projects only; an Approved project is never edited in place, a change is a re-approval (new version in Potential, approved version Obsolete, out of every target figure until approved again); the ESG lead edits figures only while Pending approval; role and site changes on the Users screen go only through the admin function; Zee's site confirmed as 1200 Werk Paderborn; legacy key values found on the first live build (Section 11). Decided by the builder with Claude Code; the Access Architect's full run and the Project Governor's iteration follow. |
 
 ---
 

@@ -1,19 +1,18 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppState } from '../lib/appState.jsx'
-import { data, sitesSorted, siteLabel } from '../lib/data.js'
+import { data, siteLabel } from '../lib/data.js'
 import { UNIT_BY_CATEGORY, CATEGORIES, BASE_YEAR, TARGET_YEAR } from '../lib/calculations.js'
 import { fmtInt, fmtEur } from '../lib/format.js'
 import { Card, Eyebrow } from '../components/ui.jsx'
 
-const EMPTY = { title: '', category: '', site: '', description: '', total_impact: '', annual_impact: '', start_year: '', capex_eur: '', opex_eur_per_year: '', owner_name: '' }
+const EMPTY = { title: '', category: '', description: '', total_impact: '', annual_impact: '', start_year: '', capex_eur: '', opex_eur_per_year: '', owner_name: '' }
 
-export function validate(form, { isSiteUser }) {
+export function validate(form) {
   const errors = {}
   const warnings = {}
   if (!form.title.trim()) errors.title = 'Title is required.'
   if (!form.category) errors.category = 'Choose a category.'
-  if (!isSiteUser && !form.site) errors.site = 'Choose Group or a site.'
   if (!form.description.trim()) errors.description = 'Describe the project and how it delivers the impact.'
   const annual = Number(form.annual_impact)
   const total = Number(form.total_impact)
@@ -33,12 +32,12 @@ export function validate(form, { isSiteUser }) {
 }
 
 export default function NewProject() {
-  const { viewer, isSiteUser, isEsgLead } = useAppState()
+  const { viewer, isSiteUser } = useAppState()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ ...EMPTY, site: isSiteUser ? viewer.site_id : '' })
+  const [form, setForm] = useState({ ...EMPTY })
   const [touched, setTouched] = useState({})
   const [preview, setPreview] = useState(null)
-  const { errors, warnings, valid } = useMemo(() => validate(form, { isSiteUser }), [form, isSiteUser])
+  const { errors, warnings, valid } = useMemo(() => validate(form), [form])
   const unit = form.category ? UNIT_BY_CATEGORY[form.category] : '–'
   const nextCode = useMemo(() => {
     const max = data.projects.reduce((m, p) => Math.max(m, Number(p.project_code.replace('PRJ-', '')) || 0), 0)
@@ -63,14 +62,15 @@ export default function NewProject() {
     e.preventDefault()
     setTouched({ _all: true })
     if (!valid) return
-    const siteId = isSiteUser ? viewer.site_id : form.site === 'group' ? null : form.site
+    // Site users register for their own site; the ESG lead registers group projects only (builder decision, 9 Oct 2026).
+    const siteId = isSiteUser ? viewer.site_id : null
     setPreview({ ...form, site_id: siteId, scope: siteId ? 'site' : 'group', unit, project_code: nextCode })
   }
 
   return (
     <div className="space-y-4 max-w-[860px]">
       <div>
-        <Eyebrow>{isSiteUser ? siteLabel(viewer.site_id) : 'Group or a site'}</Eyebrow>
+        <Eyebrow>{isSiteUser ? siteLabel(viewer.site_id) : 'Group project'}</Eyebrow>
         <h1 className="mt-0.5">Register a project</h1>
         <div className="rb-rule mt-1.5" />
       </div>
@@ -90,20 +90,7 @@ export default function NewProject() {
             )}
             {isSiteUser
               ? field('site', 'Site', <input id="site" className="rb-input" value={siteLabel(viewer.site_id)} readOnly />, 'Fixed to your site.')
-              : field(
-                  'site',
-                  'Site',
-                  <select id="site" className="rb-select" value={form.site} onChange={set('site')} onBlur={blur('site')} aria-invalid={show('site') && !!errors.site}>
-                    <option value="">Choose…</option>
-                    <option value="group">Group (not tied to a site)</option>
-                    {sitesSorted.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.code} {s.name}
-                      </option>
-                    ))}
-                  </select>,
-                  isEsgLead ? 'Group projects count for the group only.' : undefined,
-                )}
+              : field('site', 'Site', <input id="site" className="rb-input" value="Group (not tied to a site)" readOnly />, 'The ESG lead registers group projects only; each site registers its own. Group projects count for the group only.')}
             {field('unit', 'Unit', <input id="unit" className="rb-input" value={unit} readOnly />, 'Set by the category.')}
           </div>
           {field('description', 'Description', <textarea id="description" className="rb-textarea" rows={4} value={form.description} onChange={set('description')} onBlur={blur('description')} aria-invalid={show('description') && !!errors.description} />, 'What the project is and how it delivers the impact.')}

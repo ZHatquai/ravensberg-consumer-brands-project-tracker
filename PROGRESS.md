@@ -19,7 +19,7 @@
 [Rule: what exists and works right now — never what is planned. Completed checklist items are absorbed here in compressed form.]
 
 ## Last session
-Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empty and in the EU; built the seven tables as eight named migrations with RLS, revoked grants and seeds; wrote docs/supabase-setup.md; generated the fixture data; built the spec §9 calculations, all seven screens and both exports on fixture data; build and browser walkthrough clean. Merged into main through pull request ZHatquai/ravensberg-consumer-brands-project-tracker#1 on 9 Oct 2026; Netlify deploys main.
+Session 1 (9 Oct 2026): First Session Setup; the seven tables as eight named migrations with RLS and seeds; docs/supabase-setup.md; fixture data; the spec §9 calculations, all seven screens and both exports on fixture data; merged to main through pull request #1 and live on Netlify. After the builder's walkthrough: the ESG lead's form fixed to group projects, spec bumped to v1.2 from the builder's answers, legacy keys recorded. Then the Access Architect's full run: docs/access-matrix.md and docs/user-stories.md in full form, written against spec v1.2.
 [Rule: 3–5 lines maximum. Replace each session.]
 
 ## Remaining work

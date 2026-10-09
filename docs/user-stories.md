@@ -154,7 +154,7 @@ Format, one per line, then its acceptance line indented beneath it:
 - **As the ESG lead, I decline a project at Potential or Pending approval with a comment, so that weak cases are closed early.** `[projects · change state → Declined · ESG lead]`
   Acceptance: Zyad declines; the row shows Declined with the comment and a decision row; the site can resubmit or retire it.
 - **As the ESG lead, I record the committee decision with comment, people in the room and date, so that the approval is on record.** `[projects · change state → Approved or Declined · ESG lead]`
-  Acceptance: Zyad records Approved on a Pending approval row; the Overview's covered figure rises by the project's annual impact; without attendees the dialog refuses.
+  Acceptance: Zyad records Approved on a Pending approval row; the Overview's covered figure rises by the project's annual impact; without attendees, or with a date in the future, the dialog and the function refuse.
 - **As the ESG lead, I correct a figure while a project is Pending approval, with a comment, so that the committee decides on correct numbers.** `[projects · update (figures while Pending approval) · ESG lead]`
   Acceptance: Zyad changes the annual impact with a comment; the history shows old, new and comment; without a comment, or on a Potential or Approved row, the change is refused.
 - **As the ESG lead, I mark an Approved project Obsolete with a comment, so that savings that will not happen leave the pathway.** `[projects · change state → Obsolete · ESG lead]`
@@ -184,7 +184,7 @@ Format, one per line, then its acceptance line indented beneath it:
 - **As the ESG lead, I enter or update any site's figures and the group's, so that the base year is complete.** `[reference_figures · create / update · ESG lead]`
   Acceptance: Zyad enters the 2030 output plan for 1500; the estimate label on the Overview disappears; the figure's history shows the change.
 - **As the ESG lead, I set the group targets, so that the dashboard measures against the right numbers.** `[targets · update · ESG lead]`
-  Acceptance: Zyad changes a target value; the Overview recalculates; changing the category is refused.
+  Acceptance: Zyad enters the new value and the reason and clicks "Change the target"; a pop-up warns that the change applies to the whole organisation, shows what changes and the reason, and asks for "I understand"; back on the form, the second click applies it and a confirmation lists the change; the Overview recalculates; without a reason, or with the category, the change is refused; the reason, the name and the time show on the Targets table.
 - **As the ESG lead, I maintain the site list, so that a closed site is deactivated and a new one added without a code change.** `[sites · maintain lists · ESG lead]`
   Acceptance: Zyad deactivates a site; it leaves the form's choices and stays on its old projects; renaming a site that projects reference is refused; the code never changes.
 

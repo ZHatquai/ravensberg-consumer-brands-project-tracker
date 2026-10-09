@@ -6,6 +6,8 @@ import { registerRows, CATEGORIES, STATUSES } from '../lib/calculations.js'
 import { fmtInt, fmtDate } from '../lib/format.js'
 import { Card, Eyebrow, StatusDot } from '../components/ui.jsx'
 import { ExportCsvDialog } from '../components/ExportCsvDialog.jsx'
+import { ActionDialog } from '../components/ActionDialog.jsx'
+import { endorseProject, declineProject, recordCommitteeDecision } from '../lib/actions.js'
 
 const COLUMNS = [
   ['project_code', 'Project'],
@@ -20,15 +22,18 @@ const COLUMNS = [
 ]
 
 export default function Register() {
-  const { siteId, siteSel, setSiteSel, canChooseSite, year, setYear, years, isEsgLead, canRegister } = useAppState()
+  const { siteId, siteSel, setSiteSel, canChooseSite, year, setYear, years, isEsgLead, canRegister, version, notify } = useAppState()
   const navigate = useNavigate()
   const [category, setCategory] = useState('all')
   const [status, setStatus] = useState('all')
   const [submittedBy, setSubmittedBy] = useState('all')
-  const [sort, setSort] = useState(null) // { key, dir }
+  const [sort, setSort] = useState(null)
   const [csv, setCsv] = useState(false)
+  const [dialog, setDialog] = useState(null) // { kind: 'endorse' | 'decline' | 'record', project }
+  const [outcome, setOutcome] = useState('Approved')
+  const currentYear = years[years.length - 1]
 
-  const base = useMemo(() => registerRows(data, { siteId, year }), [siteId, year])
+  const base = useMemo(() => registerRows(data, { siteId, year }), [siteId, year, version]) // eslint-disable-line react-hooks/exhaustive-deps
   const submitters = useMemo(() => {
     const ids = [...new Set(base.rows.map((p) => p.created_by).filter(Boolean))]
     return ids.map((id) => profileById[id]).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name))
@@ -52,12 +57,20 @@ export default function Register() {
 
   const toggleSort = (key) => setSort((s) => (s?.key === key ? (s.dir === 'asc' ? { key, dir: 'desc' } : null) : { key, dir: 'asc' }))
   const filters = { category: category === 'all' ? null : category, status: status === 'all' ? null : status, submittedBy: submittedBy === 'all' ? null : submittedBy }
+  const actionsLive = isEsgLead && year === currentYear
+  const act = (kind, project) => (e) => {
+    e.stopPropagation()
+    setOutcome('Approved')
+    setDialog({ kind, project })
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Eyebrow>{rows.length} of {base.rows.length} projects · Pending approval first</Eyebrow>
+          <Eyebrow>
+            {rows.length} of {base.rows.length} projects · Pending approval first
+          </Eyebrow>
           <h1 className="mt-0.5">Project register</h1>
           <div className="rb-rule mt-1.5" />
         </div>
@@ -142,6 +155,7 @@ export default function Register() {
                   </button>
                 </th>
               ))}
+              {actionsLive && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -170,11 +184,35 @@ export default function Register() {
                   <div className="rb-caption text-[12px]">{personName(p.created_by)}</div>
                 </td>
                 <td className="num">{p.daysWaiting ?? ''}</td>
+                {actionsLive && (
+                  <td className="whitespace-nowrap">
+                    {p.status === 'Potential' && (
+                      <span className="inline-flex gap-1">
+                        <button className="rb-btn rb-btn--small rb-btn--primary" onClick={act('endorse', p)}>
+                          Endorse
+                        </button>
+                        <button className="rb-btn rb-btn--small" onClick={act('decline', p)}>
+                          Decline
+                        </button>
+                      </span>
+                    )}
+                    {p.status === 'Pending approval' && (
+                      <span className="inline-flex gap-1">
+                        <button className="rb-btn rb-btn--small rb-btn--primary" onClick={act('record', p)}>
+                          Record decision
+                        </button>
+                        <button className="rb-btn rb-btn--small" onClick={act('decline', p)}>
+                          Decline
+                        </button>
+                      </span>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length} className="rb-caption text-center py-6">
+                <td colSpan={COLUMNS.length + (actionsLive ? 1 : 0)} className="rb-caption text-center py-6">
                   No project matches these filters.
                 </td>
               </tr>
@@ -182,8 +220,48 @@ export default function Register() {
           </tbody>
         </table>
       </div>
-      {isEsgLead && <p className="rb-caption text-[12px]">Row actions (Endorse, Decline, Record decision) come with the access phase, together with the login.</p>}
+      {isEsgLead && year !== currentYear && <p className="rb-caption text-[12px]">Row actions apply to the current year; switch the reporting year to {currentYear} to act.</p>}
       {csv && <ExportCsvDialog onClose={() => setCsv(false)} filters={filters} rows={rows} />}
+      {dialog?.kind === 'endorse' && (
+        <ActionDialog title={`Endorse ${dialog.project.project_code}`} intro={`${dialog.project.title} goes to the committee as Pending approval.`} confirmLabel="Endorse" onConfirm={async ({ comment }) => {
+            await endorseProject(dialog.project.id, comment)
+            notify({ title: `${dialog.project.project_code} endorsed`, lines: [dialog.project.title, 'Status: Pending approval, now with the committee', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />
+      )}
+      {dialog?.kind === 'decline' && (
+        <ActionDialog title={`Decline ${dialog.project.project_code}`} intro={`${dialog.project.title} is declined; the site can resubmit a new version or retire it.`} confirmLabel="Decline" danger onConfirm={async ({ comment }) => {
+            await declineProject(dialog.project.id, comment)
+            notify({ title: `${dialog.project.project_code} declined`, lines: [dialog.project.title, 'Status: Declined. Its owner can resubmit a new version or retire it', `Comment: ${comment}`] })
+          }} onClose={() => setDialog(null)} />
+      )}
+      {dialog?.kind === 'record' && (
+        <ActionDialog
+          title={`Committee decision on ${dialog.project.project_code}`}
+          intro={dialog.project.title}
+          confirmLabel="Record decision"
+          attendees
+          date
+          extra={{
+            values: { outcome },
+            render: (
+              <div>
+                <label className="rb-label" htmlFor="outcome">
+                  Outcome
+                </label>
+                <select id="outcome" className="rb-select" value={outcome} onChange={(e) => setOutcome(e.target.value)}>
+                  <option>Approved</option>
+                  <option>Declined</option>
+                </select>
+              </div>
+            ),
+          }}
+          onConfirm={async ({ comment, attendees, decision_date }) => {
+            await recordCommitteeDecision(dialog.project.id, outcome, comment, attendees, decision_date)
+            notify({ title: `Committee decision recorded for ${dialog.project.project_code}`, lines: [dialog.project.title, `Outcome: ${outcome}`, `Decision date: ${fmtDate(decision_date)}`, `People in the room: ${attendees}`, `Comment: ${comment}`] })
+          }}
+          onClose={() => setDialog(null)}
+        />
+      )}
     </div>
   )
 }

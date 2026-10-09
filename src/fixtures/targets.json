@@ -1,0 +1,46 @@
+[
+  {
+    "id": "09c485da-c664-503b-bd60-55e4b0f8b58e",
+    "category": "emissions",
+    "base_year": 2024,
+    "target_year": 2030,
+    "value": 42,
+    "set_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "active": true,
+    "updated_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "updated_at": "2025-01-20T10:00:00+00:00"
+  },
+  {
+    "id": "d170deaa-b5c1-5970-8e8d-eb91025633ee",
+    "category": "water_absolute",
+    "base_year": 2024,
+    "target_year": 2030,
+    "value": 10,
+    "set_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "active": true,
+    "updated_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "updated_at": "2025-01-20T10:00:00+00:00"
+  },
+  {
+    "id": "95d95808-6d5f-529a-9963-49f2d89dad35",
+    "category": "water_intensity",
+    "base_year": 2024,
+    "target_year": 2030,
+    "value": 20,
+    "set_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "active": true,
+    "updated_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "updated_at": "2025-01-20T10:00:00+00:00"
+  },
+  {
+    "id": "aa677c29-123d-5160-b878-7ef4e56324b1",
+    "category": "waste_diversion",
+    "base_year": 2024,
+    "target_year": 2030,
+    "value": 95,
+    "set_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "active": true,
+    "updated_by": "90232a70-9484-5855-8409-04efe5cfd6ef",
+    "updated_at": "2025-01-20T10:00:00+00:00"
+  }
+]

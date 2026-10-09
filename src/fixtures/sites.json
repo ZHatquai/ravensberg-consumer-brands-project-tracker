@@ -1,0 +1,72 @@
+[
+  {
+    "id": "57c5fcdc-308f-5632-b5fa-ae721b8c3812",
+    "code": "1000",
+    "name": "Werk Bielefeld",
+    "city": "Bielefeld",
+    "type": "Beverages plant",
+    "active": true,
+    "updated_by": null,
+    "updated_at": "2026-01-05T09:00:00+00:00"
+  },
+  {
+    "id": "5fcc9448-7520-53b1-a2d7-27feea07b62c",
+    "code": "1100",
+    "name": "Logistikzentrum Bad Oeynhausen",
+    "city": "Bad Oeynhausen",
+    "type": "Logistics centre",
+    "active": true,
+    "updated_by": null,
+    "updated_at": "2026-01-05T09:00:00+00:00"
+  },
+  {
+    "id": "39f1afaf-bec9-56b0-9929-05b48b497d81",
+    "code": "1200",
+    "name": "Werk Paderborn",
+    "city": "Paderborn",
+    "type": "Confectionery plant",
+    "active": true,
+    "updated_by": null,
+    "updated_at": "2026-01-05T09:00:00+00:00"
+  },
+  {
+    "id": "2fcda861-8dde-549a-80ea-1c0442523ee0",
+    "code": "1300",
+    "name": "Werk Gütersloh",
+    "city": "Gütersloh",
+    "type": "Food ingredients plant",
+    "active": true,
+    "updated_by": null,
+    "updated_at": "2026-01-05T09:00:00+00:00"
+  },
+  {
+    "id": "da9ce7b9-fd3d-5ed4-a7a0-b2c27425b0df",
+    "code": "1400",
+    "name": "Werk Minden",
+    "city": "Minden",
+    "type": "Home and personal care plant",
+    "active": true,
+    "updated_by": null,
+    "updated_at": "2026-01-05T09:00:00+00:00"
+  },
+  {
+    "id": "4150a9c6-4651-5044-9d75-2ad701c065e8",
+    "code": "1500",
+    "name": "Werk Herford",
+    "city": "Herford",
+    "type": "Packaging plant",
+    "active": true,
+    "updated_by": null,
+    "updated_at": "2026-01-05T09:00:00+00:00"
+  },
+  {
+    "id": "8241ef32-ec9e-5ed2-945f-45bc279f36a3",
+    "code": "1600",
+    "name": "Werk Lippstadt",
+    "city": "Lippstadt",
+    "type": "Homeware plant",
+    "active": true,
+    "updated_by": null,
+    "updated_at": "2026-01-05T09:00:00+00:00"
+  }
+]

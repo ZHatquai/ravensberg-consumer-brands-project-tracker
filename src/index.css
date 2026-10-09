@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Ravensberg Consumer Brands UI tokens: .claude/skills/ravensberg-brand/templates/tokens.css. Light theme only. */
+@theme {
+  --color-rb-green: #0F6B3A;
+  --color-rb-leaf: #7FB069;
+  --color-rb-taupe: #C9A27F;
+  --color-rb-stone: #F5F4EF;
+  --color-rb-charcoal: #333333;
+  --color-rb-grey-mid: #6B6B6B;
+  --color-rb-grey-line: #DDDBD3;
+  --color-rb-ok: #2E8B57;
+  --color-rb-attention: #D98E2B;
+  --color-rb-problem: #C0392B;
+  --font-display: Montserrat, "Segoe UI", Arial, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  --radius-rb: 10px;
+}
+
+:root {
+  --rb-green: #0F6B3A;
+  --rb-leaf: #7FB069;
+  --rb-taupe: #C9A27F;
+  --rb-stone: #F5F4EF;
+  --rb-charcoal: #333333;
+  --rb-white: #FFFFFF;
+  --rb-grey-mid: #6B6B6B;
+  --rb-grey-line: #DDDBD3;
+  --rb-ok: #2E8B57;
+  --rb-attention: #D98E2B;
+  --rb-problem: #C0392B;
+}
+
+html { background: var(--rb-stone); }
+body {
+  background: var(--rb-stone);
+  color: var(--rb-charcoal);
+  font-family: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+h1, h2, h3 { font-family: Montserrat, "Segoe UI", Arial, sans-serif; color: var(--rb-green); font-weight: 600; margin: 0; }
+h1 { font-size: 22px; }
+h2 { font-size: 17px; }
+h3 { font-size: 14px; }
+
+.rb-eyebrow { font-family: "Source Sans 3", sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--rb-green); }
+.rb-rule { width: 56px; height: 4px; background: var(--rb-leaf); border-radius: 2px; }
+.rb-card { background: var(--rb-white); border: 1px solid var(--rb-grey-line); border-radius: 10px; }
+.rb-kpi-value { font-family: Montserrat, sans-serif; font-weight: 600; color: var(--rb-green); font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.rb-num { font-family: Montserrat, sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rb-caption { color: var(--rb-grey-mid); font-size: 13px; }
+
+.rb-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rb-table th { background: var(--rb-green); color: var(--rb-white); font-family: Montserrat, sans-serif; font-weight: 600; font-size: 12px; text-align: left; padding: 9px 10px; white-space: nowrap; }
+.rb-table th:first-child { border-top-left-radius: 8px; }
+.rb-table th:last-child { border-top-right-radius: 8px; }
+.rb-table td { border-bottom: 1px solid var(--rb-grey-line); padding: 8px 10px; font-variant-numeric: tabular-nums; vertical-align: top; }
+.rb-table tbody tr:nth-child(even) td { background: var(--rb-stone); }
+.rb-table tr.rb-row-link { cursor: pointer; }
+.rb-table tr.rb-row-link:hover td { background: #ECEBE4; }
+.rb-table td.num, .rb-table th.num { text-align: right; }
+
+.rb-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.rb-dot--ok { background: var(--rb-ok); }
+.rb-dot--attention { background: var(--rb-attention); }
+.rb-dot--problem { background: var(--rb-problem); }
+.rb-dot--neutral { background: var(--rb-grey-mid); }
+.rb-dot--closed { background: transparent; border: 2px solid var(--rb-grey-mid); box-sizing: border-box; }
+.rb-estimate { border: 1.5px dashed var(--rb-attention); border-radius: 4px; padding: 0 4px; color: var(--rb-attention); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+.rb-btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 7px 14px; font-weight: 600; font-size: 14px; border: 1px solid var(--rb-green); color: var(--rb-green); background: var(--rb-white); cursor: pointer; font-family: "Source Sans 3", sans-serif; }
+.rb-btn:hover { background: #EEF4F0; }
+.rb-btn--primary { background: var(--rb-green); color: var(--rb-white); }
+.rb-btn--primary:hover { background: #0C5A31; }
+.rb-btn:disabled { opacity: .5; cursor: not-allowed; }
+.rb-btn--small { padding: 4px 10px; font-size: 13px; }
+
+.rb-input, .rb-select, .rb-textarea { border: 1px solid var(--rb-grey-line); border-radius: 8px; padding: 7px 10px; background: var(--rb-white); font-family: "Source Sans 3", sans-serif; font-size: 14px; color: var(--rb-charcoal); width: 100%; }
+.rb-input:focus, .rb-select:focus, .rb-textarea:focus { outline: 2px solid var(--rb-leaf); outline-offset: 0; border-color: var(--rb-leaf); }
+.rb-input[aria-invalid="true"], .rb-select[aria-invalid="true"], .rb-textarea[aria-invalid="true"] { border-color: var(--rb-problem); }
+.rb-label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.rb-error { color: var(--rb-problem); font-size: 13px; margin-top: 3px; }
+.rb-warning { color: var(--rb-attention); font-size: 13px; margin-top: 3px; }
+
+.rb-tab { padding: 8px 14px; font-weight: 600; font-size: 14px; border-bottom: 3px solid transparent; color: var(--rb-grey-mid); cursor: pointer; background: none; border-top: 0; border-left: 0; border-right: 0; font-family: "Source Sans 3", sans-serif; }
+.rb-tab[aria-selected="true"] { color: var(--rb-green); border-bottom-color: var(--rb-leaf); }
+
+.rb-nav a { color: var(--rb-charcoal); font-weight: 600; padding: 6px 10px; border-radius: 6px; text-decoration: none; font-size: 14px; }
+.rb-nav a:hover { background: var(--rb-stone); }
+.rb-nav a.active { color: var(--rb-green); background: #EEF4F0; }
+
+.rb-flag { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--rb-problem); font-weight: 600; }
+.rb-pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 2px 10px; font-size: 13px; background: var(--rb-stone); border: 1px solid var(--rb-grey-line); white-space: nowrap; }
+
+.rb-modal-backdrop { position: fixed; inset: 0; background: rgba(51,51,51,.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+.rb-modal { background: var(--rb-white); border-radius: 10px; border: 1px solid var(--rb-grey-line); width: 100%; max-width: 520px; padding: 22px; }
+
+.recharts-text { font-family: "Source Sans 3", sans-serif; fill: var(--rb-grey-mid); font-size: 12px; }
+.recharts-cartesian-grid line { stroke: var(--rb-grey-line); }

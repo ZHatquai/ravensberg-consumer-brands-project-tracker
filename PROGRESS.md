@@ -23,8 +23,8 @@ Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empt
 [Rule: 3–5 lines maximum. Replace each session.]
 
 ## Remaining work
-- [ ] Builder: merge pull request ZHatquai/ravensberg-consumer-brands-project-tracker#1 (branch `claude/elegant-pasteur-s4jgz3`) into main, connect the repo to a Netlify site
-- [ ] Builder: connect Supabase to the Netlify site with the Supabase extension (project ravensberg-consumer-brands, framework Vite), check the key values start with `sb_` (if `eyJ`: paste the publishable key by hand and add "rotate the secret key" to the Backlog), redeploy; record the real variable names in docs/supabase-setup.md §8 if they differ
+- [ ] Builder: merge pull request ZHatquai/ravensberg-consumer-brands-project-tracker#1 (branch `claude/elegant-pasteur-s4jgz3`) into main; the Netlify site `sustainability-project-tracker` is already connected to the repo (its deploy preview of the PR built green; production deploys from main)
+- [ ] Builder: connect Supabase to the Netlify site `sustainability-project-tracker` with the Supabase extension (project ravensberg-consumer-brands, framework Vite), check the key values start with `sb_` (if `eyJ`: paste the publishable key by hand and add "rotate the secret key" to the Backlog), redeploy; record the real variable names in docs/supabase-setup.md §8 if they differ
 - [ ] Builder: confirm Zee's site (1200 Werk Paderborn assumed) and review the four points carried to the full run in docs/access-matrix.md
 - [ ] Builder: verify mail.sustainos.io in Resend and have the SMTP settings ready for Supabase → Auth (before the access phase)
 - [ ] Run the Access Architect's full run (docs/supabase-setup.md exists): it adds the named people, ownership, states, actions and the policy plan to docs/access-matrix.md and docs/user-stories.md; Governor in Iteration Mode; then the Login screen, the login, the rules, the narrow functions, the admin user-creation Netlify Function and every screen's actions are built together, and every screen switches from its fixture file to the real rows as the signed-in user; the "View as" switch is removed
@@ -53,7 +53,7 @@ Session 1 (9 Oct 2026): First Session Setup; confirmed the Supabase project empt
 [Rule: one line per decision made during the build that is not in the spec. Future sessions depend on these to stay consistent.]
 
 ## Known issues
-- Session 1 work is on branch `claude/elegant-pasteur-s4jgz3`, open as pull request ZHatquai/ravensberg-consumer-brands-project-tracker#1 (https://github.com/ZHatquai/ravensberg-consumer-brands-project-tracker/pull/1); nothing is on Netlify until it is merged into main.
+- Session 1 work is on branch `claude/elegant-pasteur-s4jgz3`, open as pull request ZHatquai/ravensberg-consumer-brands-project-tracker#1 (https://github.com/ZHatquai/ravensberg-consumer-brands-project-tracker/pull/1). Netlify built a deploy preview of it (https://deploy-preview-1--sustainability-project-tracker.netlify.app, not opened from the build sandbox); the production site deploys only after the merge into main.
 - Zee's site assumed 1200 Werk Paderborn in the seeded profile and the fixtures; confirm before the Access Architect's full run (spec §15).
 - status on decisions and reference_figures defaults to 'active'; the full run fixes the other values (the calculations skip rows with status 'void').
 - Carried to the full run (access-matrix.md): Approved is final but the ESG lead edits approved figures; Users screen changes role and site; reference_figures needs a history table; Zee's site.

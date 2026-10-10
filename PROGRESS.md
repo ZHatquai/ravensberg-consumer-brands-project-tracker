@@ -28,7 +28,8 @@ Session 2 (9 Oct 2026): the access phase built in one piece on branch `claude/el
 
 ## Remaining work
 - [ ] Builder: merge the pull request for this follow-up (the reset script, the runbook, the docs)
-- [ ] Next Claude Code session: drop the leftovers of the abandoned function-based reset by one migration (`drop table public.demo_snapshot; drop function public.demo_probe(), public.demo_probe1(), public.demo_probe2(), public.demo_probe3();`), once the migration tool applies function migrations again; 
+- [ ] Builder, in the Supabase SQL Editor: run the drop script for the leftovers of the abandoned function-based reset (the statements of `supabase/migrations/20261010090000_drop_demo_reset_leftovers.sql` plus one insert that records it in the migration history); then Claude Code verifies and updates docs/supabase-setup.md
+- [ ] Handover package, when the builder asks: run the Handover Architect skill (its first question: Maintain or Transfer); it starts from this file, the refusal test record and docs/demo-portfolio.md
 - [ ] Builder: before real users: add and verify the sending subdomain (for example mail.sustainos.io) in Resend and enter the SMTP settings in Supabase → Auth → SMTP settings (host smtp.resend.com, the Resend API key as the password), never in a file
 - [ ] Builder: retire or keep the six made-up site users on the Users screen (they have no login; they carry the demo portfolio's submitter names)
 - [ ] Builder: local test pass — full walkthrough of every view as each role (Claude Code did one in headless Chromium in session 1 on fixtures; a human pass on the real rows is still due)

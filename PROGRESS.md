@@ -28,11 +28,10 @@ Session 2 (9 Oct 2026): the access phase built in one piece on branch `claude/el
 
 ## Remaining work
 - [ ] Handover package, when the builder asks: run the Handover Architect skill (its first question: Maintain or Transfer); it starts from this file, the refusal test record and docs/demo-portfolio.md
-- [ ] Builder: retire or keep the six made-up site users on the Users screen (they have no login; they carry the demo portfolio's submitter names)
 - [ ] Builder: local test pass — full walkthrough of every view as each role (Claude Code did one in headless Chromium in session 1 on fixtures; a human pass on the real rows is still due)
 - [ ] Acceptance criteria pass — spec §13 on the deployed tool after half B: 1, 6, 7, 12, 13, 17 and 18 are the ones that waited for the access phase
-- [ ] Builder: disable the legacy API keys in the Supabase dashboard once the live login and the Users screen work with the `sb_` values
-- [ ] Builder: keep the Supabase project active, or upgrade to Pro (manual billing step), for the workshop week; Free has no backups and pauses when idle
+- [ ] Builder: deactivate the legacy `anon` and `service_role` keys in Supabase → Project Settings → API Keys, after checking their last-used indicator; then test a magic-link login and one admin action (change a demo user's site and back) on the live tool; re-activate on the same page if anything fails (reversible). Do not touch the JWT signing keys
+- [ ] Builder: keep the Supabase project active through each workshop week (Free plan for now, builder decision 10 Oct 2026; Free pauses after about a week unused and has no backups; Pro is a manual billing step)
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Refusal test record
@@ -65,6 +64,7 @@ Session 2 (9 Oct 2026): the access phase built in one piece on branch `claude/el
 - Refusal test half A runs as SQL impersonation inside one rolled-back transaction because the sandbox cannot reach the project over HTTPS; the same checks the API would make (RLS, grants, triggers, function guards) are exercised, with `anon` and `authenticated` as the roles and the JWT claims set as PostgREST sets them (session 2).
 - The demo portfolio was seeded with the history triggers paused so the fixture history rows are the only ones; from now on every write goes through the triggers (session 2).
 - Leftovers of the abandoned function-based reset (the `demo_snapshot` table, four probe functions) dropped on 10 Oct 2026 by migration `20261010090000_drop_demo_reset_leftovers`, run by the builder in the SQL Editor with its schema_migrations row; verified by Claude Code (session 2).
+- Workshop flow (builder, 10 Oct 2026): the made-up site users are retired live during the workshop and audience members are invited on the Users screen; the reset script brings the made-up users back active, keeps every participant who has a login, and removes their projects. Participants accumulate on the Users screen across the three runs; retire them after each workshop if the list gets long (session 2).
 - The workshop reset is a plain SQL script run by the platform owner in the SQL Editor (`supabase/demo-reset.sql`), not a database function: the builder asked for data ingestion only, nothing to build; the script keeps every login and every profile with a login, wipes the record tables, ingests the demo rows with their original ids and deletes the history rows the triggers write during the ingest, so the demo's own history is the only one (session 2).
 - The admin function is reached at /api/admin-users through an explicit redirect in netlify.toml, listed before the SPA rule; the function's own URL stays the default one (session 2).
 - A committee decision date is never after today, judged in Europe/Berlin (the company's day) by the function and capped in the dialog by the browser's local day (builder finding at half B, session 2).

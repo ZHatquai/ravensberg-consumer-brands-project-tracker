@@ -15,7 +15,7 @@
 | Population pattern | P2 internal only — no anon access to any table, now or later (docs/access-matrix.md §1) |
 | Key system | Publishable / secret keys (`sb_publishable_…` / `sb_secret_…`). The Netlify extension wrote the legacy `eyJ` values on 9 Oct 2026; the builder replaced both by hand the same day (`VITE_SUPABASE_ANON_KEY` = publishable key, `SUPABASE_SERVICE_ROLE_KEY` = secret key, marked secret). Nothing in this repo holds a key value. The legacy keys can be disabled in the dashboard once the live login works (§9) |
 | Auth | Supabase Auth, magic link, sign-ups off; as built in session 2 (§7) |
-| State on 9 October 2026 (session 2) | eight tables (the seven plus `reference_figures_history`), RLS on every one, the policies, triggers and functions of docs/access-matrix.md §6 in place; the demo portfolio seeded (profiles 10, reference_figures 20, projects 38, decisions 57, project_history 99); thirteen migrations applied and saved in supabase/migrations/; refusal test half A passed (119 cases, supabase/refusal-test-half-a.sql) |
+| State on 9 October 2026 (session 2) | eight tables (the seven plus `reference_figures_history`), RLS on every one, the policies, triggers and functions of docs/access-matrix.md §6 in place; the demo portfolio seeded (profiles 10, reference_figures 20, projects 38, decisions 57, project_history 99); twenty-three migrations applied and saved in supabase/migrations/; refusal test half A passed (119 cases, supabase/refusal-test-half-a.sql) |
 
 ## 2. Tables
 
@@ -159,17 +159,6 @@ Unique `(project_code, version)` (`projects_code_version`). Sequence `public.pro
 | changed_by | uuid | → profiles.id |
 | changed_at | timestamptz | not null, default now() |
 
-### demo_snapshot (temporary, unused; session 2)
-
-| Column | Type | Constraints / default |
-|---|---|---|
-| table_name | text | PK |
-| payload | jsonb | not null (renamed from `rows`) |
-| note | text | |
-| taken_at | timestamptz | not null, default now() |
-
-Created on 9 Oct 2026 for a function-based demo reset that was abandoned the same day (the session's migration tool hung on every function migration; the builder chose a plain SQL script instead, `supabase/demo-reset.sql`, see docs/demo-portfolio.md). RLS on, no policy, no grant to anon or authenticated: unreachable through the API. Holds a few JSON rows; nothing reads it. To be dropped by a migration in a later session, together with the four probe functions of §5.
-
 ## 3. Rules (per table)
 
 Source: docs/access-matrix.md §6, one line per rule with its mechanism. "Me" = the caller's active profile, found by `current_profile_id()` (auth.uid() → profiles.auth_user_id, retired_at null). A login with no profile, or a retired one, matches no row anywhere. Built in session 2 (migrations `access_schema_delta`, `access_policies`, `access_functions`).
@@ -251,8 +240,6 @@ Every function below is `SECURITY DEFINER` with `SET search_path = ''` and schem
 | `edit_project_figures(p_project, p_changes jsonb, p_comment)` | definer | ESG lead | role, comment, keys limited to total_impact, annual_impact, start_year, capex_eur, opex_eur_per_year, status Pending approval | updates the figures; one history row per changed field with the comment |
 | `anonymise_person(p_profile, p_name)` | definer | ESG lead | role, not the caller's own row, the profile retired | profile name → "retired user" and email → retired-<id>@anonymised.invalid; every `projects.owner_name` equal to the name and every `decisions.attendees` mention → "retired user"; history rows updated and a `decision_attendees` history row written; returns the number of rows touched |
 
-Temporary (session 2, 9 Oct 2026): `demo_probe()`, `demo_probe1()`, `demo_probe2()`, `demo_probe3()`, SQL or plpgsql, SECURITY DEFINER, EXECUTE revoked from public, anon and authenticated, created to find out why the migration tool hung; they read nothing a session could not, change nothing, and are to be dropped by a migration in a later session.
-
 The admin-users Netlify Function (`netlify/functions/admin-users.mjs`, secret key) is not a database function but is part of the rule set: it verifies the caller's session belongs to an active ESG lead, refuses the caller's own row, validates every input, does one change per call (create = profile + login identity with email confirmed; update = role and site; retire = retired_at, retired_comment and a ban on the login) and returns only the profile fields the Users screen shows.
 
 ## 6. Buckets
@@ -307,3 +294,4 @@ Verified on 9 October 2026 in the dashboard: the extension's full list is `SUPAB
 | 2 | 9 Oct 2026 | `20261009191230_demo_snapshot_table.sql` | `demo_snapshot` table (RLS on, no policy, no grant) for a function-based demo reset, abandoned the same day; to be dropped later |
 | 2 | 9 Oct 2026 | `20261009192200_demo_probe.sql`, `20261009192429_demo_probe1.sql`, `20261009192435_demo_probe2.sql`, `20261009192441_demo_probe3.sql`, `20261009192603_demo_probe4.sql` | probe functions and a comment, used to find out why the migration tool hung on function migrations (it did so regardless of content); to be dropped later |
 | 2 | 9 Oct 2026 | `20261009192938_demo_snapshot_payload_column.sql` | `demo_snapshot.rows` renamed to `payload` while probing |
+| 2 | 10 Oct 2026 | `20261010090000_drop_demo_reset_leftovers.sql` | drops the `demo_snapshot` table and the four probe functions; applied by the builder in the SQL Editor (the session's migration tool timed out) with the same script recording it in `supabase_migrations.schema_migrations`; verified by Claude Code: no leftover object, 23 migrations recorded, demo data untouched |

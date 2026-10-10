@@ -3,10 +3,10 @@
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
 **Session:** 2
-**Last updated:** 10 October 2026 — session 2, Claude Code (access phase merged and live; demo reset script written and run once by the builder)
+**Last updated:** 10 October 2026 — session 2, Claude Code (access phase live; demo reset in use; leftovers of the abandoned reset dropped)
 **Live URL:** https://sustainability-project-tracker.netlify.app (Netlify site "sustainability-project-tracker", auto-deploys from main; branch `claude/elegant-pasteur-s4jgz3` builds as a deploy preview) [Rule: fill in after the first successful deploy]
 **Stage:** deploy and maintain [Rule: one of — business logic and database / second screen and access design / login and access rules together / deploy and maintain. Advance it when that stage's items are absorbed into Current state. Decided by what exists, never by a week or a version number.]
-**Supabase project:** ravensberg-consumer-brands, ref bqyjulvljqafubusplgm, URL https://bqyjulvljqafubusplgm.supabase.co, region eu-central-1, Free plan. Eight tables (the seven plus reference_figures_history), RLS on every one, the policies, triggers and functions of docs/access-matrix.md §6 in place; demo portfolio seeded (profiles 10, reference_figures 20, projects 38, decisions 57, project_history 99); twenty-two migrations applied and saved in supabase/migrations/ (the last seven are the leftovers of an abandoned function-based demo reset: an unused table and four harmless probe functions, to be dropped). Auth: magic link with Resend SMTP; login identities exist for Zyad, Zee and Sam. [Rule: the only place project state is recorded; CLAUDE.md never carries it]
+**Supabase project:** ravensberg-consumer-brands, ref bqyjulvljqafubusplgm, URL https://bqyjulvljqafubusplgm.supabase.co, region eu-central-1, Free plan. Eight tables (the seven plus reference_figures_history), RLS on every one, the policies, triggers and functions of docs/access-matrix.md §6 in place; demo portfolio seeded (profiles 10, reference_figures 20, projects 38, decisions 57, project_history 99); twenty-three migrations applied and saved in supabase/migrations/ (seven of them from an abandoned function-based demo reset of 9 Oct 2026, whose objects the twenty-third dropped on 10 Oct 2026). Auth: magic link with Resend SMTP; login identities exist for Zyad, Zee and Sam. [Rule: the only place project state is recorded; CLAUDE.md never carries it]
 
 ## Current state
 - Repo layout per CLAUDE.md: docs/ (product-spec.md v1.2, access-matrix.md and user-stories.md in full form, supabase-setup.md), .claude/skills/ravensberg-brand/, public/assets/ and public/fonts/, supabase/migrations/ (15 files) plus supabase/refusal-test-half-a.sql, netlify/functions/admin-users.mjs, src/. CLAUDE.md governs spec v1.2.
@@ -27,10 +27,7 @@ Session 2 (9 Oct 2026): the access phase built in one piece on branch `claude/el
 [Rule: 3–5 lines maximum. Replace each session.]
 
 ## Remaining work
-- [ ] Builder: merge the pull request for this follow-up (the reset script, the runbook, the docs)
-- [ ] Builder, in the Supabase SQL Editor: run the drop script for the leftovers of the abandoned function-based reset (the statements of `supabase/migrations/20261010090000_drop_demo_reset_leftovers.sql` plus one insert that records it in the migration history); then Claude Code verifies and updates docs/supabase-setup.md
 - [ ] Handover package, when the builder asks: run the Handover Architect skill (its first question: Maintain or Transfer); it starts from this file, the refusal test record and docs/demo-portfolio.md
-- [ ] Builder: before real users: add and verify the sending subdomain (for example mail.sustainos.io) in Resend and enter the SMTP settings in Supabase → Auth → SMTP settings (host smtp.resend.com, the Resend API key as the password), never in a file
 - [ ] Builder: retire or keep the six made-up site users on the Users screen (they have no login; they carry the demo portfolio's submitter names)
 - [ ] Builder: local test pass — full walkthrough of every view as each role (Claude Code did one in headless Chromium in session 1 on fixtures; a human pass on the real rows is still due)
 - [ ] Acceptance criteria pass — spec §13 on the deployed tool after half B: 1, 6, 7, 12, 13, 17 and 18 are the ones that waited for the access phase
@@ -67,6 +64,7 @@ Session 2 (9 Oct 2026): the access phase built in one piece on branch `claude/el
 - The admin function's "create" also serves an existing profile that has no login yet (the seeded people, or a failed identity step): it creates the identity and changes nothing else; the Users screen offers it as "Create login" on such rows (session 2).
 - Refusal test half A runs as SQL impersonation inside one rolled-back transaction because the sandbox cannot reach the project over HTTPS; the same checks the API would make (RLS, grants, triggers, function guards) are exercised, with `anon` and `authenticated` as the roles and the JWT claims set as PostgREST sets them (session 2).
 - The demo portfolio was seeded with the history triggers paused so the fixture history rows are the only ones; from now on every write goes through the triggers (session 2).
+- Leftovers of the abandoned function-based reset (the `demo_snapshot` table, four probe functions) dropped on 10 Oct 2026 by migration `20261010090000_drop_demo_reset_leftovers`, run by the builder in the SQL Editor with its schema_migrations row; verified by Claude Code (session 2).
 - The workshop reset is a plain SQL script run by the platform owner in the SQL Editor (`supabase/demo-reset.sql`), not a database function: the builder asked for data ingestion only, nothing to build; the script keeps every login and every profile with a login, wipes the record tables, ingests the demo rows with their original ids and deletes the history rows the triggers write during the ingest, so the demo's own history is the only one (session 2).
 - The admin function is reached at /api/admin-users through an explicit redirect in netlify.toml, listed before the SPA rule; the function's own URL stays the default one (session 2).
 - A committee decision date is never after today, judged in Europe/Berlin (the company's day) by the function and capped in the dialog by the browser's local day (builder finding at half B, session 2).
@@ -78,9 +76,8 @@ Session 2 (9 Oct 2026): the access phase built in one piece on branch `claude/el
 [Rule: one line per decision made during the build that is not in the spec. Future sessions depend on these to stay consistent.]
 
 ## Known issues
-- On 9 Oct 2026 the session's Supabase migration tool hung at its 60-second limit on every function migration (content made no difference; a one-line function and a table passed), and its SQL tool cancelled every statement containing DELETE. The reset was therefore made a script for the SQL Editor; seven leftover migrations (an unused table, four probe functions, one comment, one rename) wait for a drop migration.
+- The session's Supabase migration tool timed out on every function migration and on drops (9 and 10 Oct 2026), and its SQL tool cancelled every DELETE. Workaround in use: the builder runs such changes in the Supabase SQL Editor with an insert into `supabase_migrations.schema_migrations`, and the same SQL is saved as the migration file. Retry the tool first in a new session.
 - Project codes can have gaps: an insert the policy refuses still consumes a sequence value, so the next real project can skip numbers. Cosmetic; the codes stay unique and ascending, and the demo reset sets the sequence back to PRJ-0037.
-- Half B left test rows in the real tables: PRJ-0046 and PRJ-0047 (Zee, Potential), PRJ-0016 v2 and PRJ-0019 v2 (re-approval copies in Potential), Anke Rieger retired and anonymised. See Remaining work.
 - The made-up site users (anke.rieger@… and five more, @ravensberg-cb.example) are active profiles without a login identity; they appear on the Users screen as "no login yet". Retire them if they confuse the picture, or keep them as the demo's submitters.
 - `status` on decisions and reference_figures stays 'active' in version 1; the calculations skip rows with status 'void', which never occurs.
 - Review pack tables overflow onto extra pages when a year holds more approved projects or decisions than fit; the footer numbers all pages.

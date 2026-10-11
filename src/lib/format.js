@@ -64,4 +64,5 @@ export const FIELD_LABEL = {
   status: 'Status',
   version: 'Version',
   supersedes_project_id: 'Supersedes',
+  presentation: 'Presentation',
 }

@@ -5,7 +5,8 @@ import { data, siteLabel } from '../lib/data.js'
 import { UNIT_BY_CATEGORY, CATEGORIES, BASE_YEAR, TARGET_YEAR } from '../lib/calculations.js'
 import { fmtInt } from '../lib/format.js'
 import { Card, Eyebrow } from '../components/ui.jsx'
-import { createProject, updateProject } from '../lib/actions.js'
+import { createProject, updateProject, uploadPresentation } from '../lib/actions.js'
+import { TEMPLATES, templatePath, checkPresentationFile, ACCEPT, MAX_LABEL } from '../lib/presentation.js'
 
 const EMPTY = { title: '', category: '', description: '', total_impact: '', annual_impact: '', start_year: '', capex_eur: '', opex_eur_per_year: '', owner_name: '' }
 const fromRow = (p) => Object.fromEntries(Object.keys(EMPTY).map((k) => [k, p[k] === null || p[k] === undefined ? '' : String(p[k])]))
@@ -40,9 +41,11 @@ export default function NewProject({ editing = false }) {
   const navigate = useNavigate()
   const existing = editing ? data.projects.find((x) => x.id === id) : null
   const [form, setForm] = useState(() => (existing ? fromRow(existing) : { ...EMPTY }))
+  const [file, setFile] = useState(null) // the approval presentation (v1.3), new registrations only; replaced on the Project page
   const [touched, setTouched] = useState({})
   const [save, setSave] = useState({ status: 'idle' })
   const { errors, warnings, valid } = useMemo(() => validate(form), [form])
+  const fileError = editing ? null : checkPresentationFile(file)
   const unit = form.category ? UNIT_BY_CATEGORY[form.category] : '–'
 
   if (editing) {
@@ -81,7 +84,7 @@ export default function NewProject({ editing = false }) {
   const onSubmit = async (e) => {
     e.preventDefault()
     setTouched({ _all: true })
-    if (!valid) return
+    if (!valid || fileError) return
     const fields = {
       title: form.title.trim(),
       category: form.category,
@@ -94,18 +97,28 @@ export default function NewProject({ editing = false }) {
       opex_eur_per_year: Number(form.opex_eur_per_year),
       owner_name: form.owner_name.trim(),
     }
+    const figures = `Annual impact: ${fmtInt(fields.annual_impact)} ${unit}, total ${fmtInt(fields.total_impact)}, from ${fields.start_year}`
     setSave({ status: 'working' })
     try {
       if (editing) {
         await updateProject(existing.id, fields)
-        notify({ title: `${existing.project_code} saved`, lines: [fields.title, `Annual impact: ${fmtInt(fields.annual_impact)} ${unit}, total ${fmtInt(fields.total_impact)}, from ${fields.start_year}`, 'Every changed field is in the history'], path: `/projects/${existing.id}` })
+        notify({ title: `${existing.project_code} saved`, lines: [fields.title, figures, 'Every changed field is in the history'], path: `/projects/${existing.id}` })
         navigate(`/projects/${existing.id}`)
       } else {
         // Site users register for their own site; the ESG lead registers group projects only (builder decision, 9 Oct 2026).
         // Status Potential, version 1 and the next project code are fixed by the database; the policy refuses anything else.
         const siteId = isSiteUser ? viewer.site_id : null
         const row = await createProject({ ...fields, scope: siteId ? 'site' : 'group', site_id: siteId, status: 'Potential', version: 1 })
-        notify({ title: `${row.project_code} registered`, lines: [fields.title, 'Status: Potential, version 1', `Annual impact: ${fmtInt(fields.annual_impact)} ${unit}, total ${fmtInt(fields.total_impact)}, from ${fields.start_year}`, isSiteUser ? 'The ESG lead endorses it from here; you can edit it until then' : 'Endorse it from the register when it is ready for the committee'], path: `/projects/${row.id}` })
+        // The row is saved first (its id is the file's folder), then the presentation goes up and is recorded (spec §8, v1.3).
+        // If the upload fails the project exists without its file: the Project page offers Attach, and the database refuses the endorsement until then.
+        try {
+          await uploadPresentation(row.id, file)
+        } catch (err) {
+          notify({ title: `${row.project_code} registered without its presentation`, lines: [fields.title, `The upload failed: ${err.message || err}`, 'Attach the presentation on the project page; the ESG lead cannot endorse it until then'], path: `/projects/${row.id}` })
+          navigate(`/projects/${row.id}`)
+          return
+        }
+        notify({ title: `${row.project_code} registered`, lines: [fields.title, 'Status: Potential, version 1', figures, `Presentation: ${file.name}`, isSiteUser ? 'The ESG lead endorses it from here; you can edit it and replace the presentation until then' : 'Endorse it from the register when it is ready for the committee'], path: `/projects/${row.id}` })
         navigate(`/projects/${row.id}`)
       }
     } catch (err) {
@@ -120,7 +133,7 @@ export default function NewProject({ editing = false }) {
         <Eyebrow>{editing ? `${existing.project_code} · version ${existing.version} · ${existing.scope === 'site' ? siteLabel(existing.site_id) : 'Group project'}` : siteText}</Eyebrow>
         <h1 className="mt-0.5">{editing ? 'Edit the project' : 'Register a project'}</h1>
         <div className="rb-rule mt-1.5" />
-        {editing && <p className="rb-caption text-[13px] mt-1">Editable while Potential. Every changed field is logged with old and new value.</p>}
+        {editing && <p className="rb-caption text-[13px] mt-1">Editable while Potential. Every changed field is logged with old and new value. The presentation is replaced on the project page.</p>}
       </div>
       <form onSubmit={onSubmit} noValidate>
         <Card className="space-y-4">
@@ -154,8 +167,44 @@ export default function NewProject({ editing = false }) {
             {field('opex_eur_per_year', 'Opex (EUR per year)', <input id="opex_eur_per_year" type="number" step="any" className="rb-input" value={form.opex_eur_per_year} onChange={set('opex_eur_per_year')} onBlur={blur('opex_eur_per_year')} aria-invalid={show('opex_eur_per_year') && !!errors.opex_eur_per_year} />, 'Negative for a saving.')}
             {field('owner_name', 'Owner name', <input id="owner_name" className="rb-input" value={form.owner_name} onChange={set('owner_name')} onBlur={blur('owner_name')} aria-invalid={show('owner_name') && !!errors.owner_name} />, 'The project owner at the site.')}
           </div>
+
+          {!editing && (
+            <div className="border-t border-rb-grey-line pt-4 space-y-3" aria-labelledby="presentation-title">
+              <div>
+                <div id="presentation-title" className="font-semibold">
+                  Approval presentation
+                </div>
+                <p className="rb-caption text-[13px] mt-0.5">
+                  The committee decides on a PowerPoint presentation built from the template for the category. Download the template, fill it in (the instruction slide says how), and attach it here. One file per project, .pptx, at most {MAX_LABEL}; the tool checks the file's type and size, never its content.
+                </p>
+              </div>
+              <ul className="grid md:grid-cols-3 gap-2 list-none p-0 m-0">
+                {TEMPLATES.map((t) => {
+                  const chosen = form.category === t.category
+                  return (
+                    <li key={t.category} className={`rounded border px-3 py-2 ${chosen ? 'border-rb-green bg-white' : 'border-rb-grey-line'}`} aria-current={chosen ? 'true' : undefined}>
+                      <div className={`text-[14px] ${chosen ? 'font-semibold text-rb-green' : ''}`}>
+                        {t.category} template{chosen ? ' (your category)' : ''}
+                      </div>
+                      <a href={templatePath(t)} download className="text-[13px] underline">
+                        Download .pptx
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+              {field(
+                'presentation',
+                'Presentation file',
+                <input id="presentation" type="file" accept={ACCEPT} className="rb-input" onChange={(e) => setFile(e.target.files?.[0] || null)} onBlur={blur('presentation')} aria-invalid={show('presentation') && !!fileError} />,
+                file ? `${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)` : `.pptx only, max ${MAX_LABEL}. Required.`,
+              )}
+              {show('presentation') && fileError && <div className="rb-error -mt-2">{fileError}</div>}
+            </div>
+          )}
+
           {save.status === 'error' && <div className="rb-error">{save.message}</div>}
-          {touched._all && !valid && save.status !== 'error' && <div className="rb-error">Please correct the fields marked above.</div>}
+          {touched._all && (!valid || fileError) && save.status !== 'error' && <div className="rb-error">Please correct the fields marked above.</div>}
           <div className="flex flex-wrap items-center gap-2 pt-2">
             <button type="submit" className="rb-btn rb-btn--primary" disabled={save.status === 'working'}>
               {save.status === 'working' ? 'Saving…' : editing ? 'Save changes' : 'Submit'}
@@ -163,7 +212,7 @@ export default function NewProject({ editing = false }) {
             <button type="button" className="rb-btn" onClick={() => navigate(editing ? `/projects/${existing.id}` : '/projects')}>
               Cancel
             </button>
-            {!editing && <span className="rb-caption text-[12px]">Saved as Potential, version 1, with the next sequential project ID.</span>}
+            {!editing && <span className="rb-caption text-[12px]">Saved as Potential, version 1, with the next sequential project ID; the presentation is uploaded with it.</span>}
           </div>
         </Card>
       </form>

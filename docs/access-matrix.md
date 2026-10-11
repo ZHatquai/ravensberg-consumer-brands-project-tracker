@@ -1,16 +1,17 @@
 # Access Matrix — Ravensberg Project Tracker
 
-**Written against:** product-spec.md v1.2 · supabase-setup.md as of 9 October 2026
+**Written against:** product-spec.md v1.3 · supabase-setup.md as of 10 October 2026
 **Population pattern:** P2 internal only
 **Date:** 9 October 2026 (full run; the short run of the same date is extended here, never replaced)
+**Iteration:** 11 October 2026, the approval presentation (spec v1.3, builder decision): the storage bucket rows in Section 1, two project rows, the v1.3 delta in Section 5, lines 50 to 62 of the policy plan, rule 6 in Section 7. Extended, not replaced.
 **Author:** Zyad Hatquai
 **Status:** Confirmed
 **Companion file:** user-stories.md
 
 > The source of truth for who may do what. The Project Governor lifts Section 7 into
 > CLAUDE.md. Claude Code builds the login and every line of Section 6 with the mechanism
-> that line names (an RLS policy, a trigger, a narrow function, or the screen) in the same
-> pass. The screen test as each named person triggers every `no` and every `own` in
+> that line names (an RLS policy, a trigger, a narrow function, a storage policy on the
+> bucket, or the screen) in the same pass. The screen test as each named person triggers every `no` and every `own` in
 > Section 1. The handover ships this file unchanged. Section 6 of product-spec.md points
 > here from v1.2 on and holds no grid of its own.
 >
@@ -49,8 +50,9 @@ project and a group project; one transition per target state) each shape has its
 | read | own | yes | yes | no |
 | update (while Potential: title, description, total and annual impact, start year, capex, opex, owner; never status, site, scope, version, code, predecessor, submitter or the audit columns) | own | no | own (group projects) | no |
 | update (figures while Pending approval, comment required) | no | no | function | no |
-| update (Approved, Declined, Retired, Obsolete: the final states) | no | no | no | no |
-| change state → Pending approval (endorse, comment) | no | no | function | no |
+| update (presentation, v1.3: the file name, uploader and time on the row when the owner attaches or replaces the file; while Potential only, on a version that requires a presentation) | own | no | own (group projects) | no |
+| update (Approved, Declined, Retired, Obsolete: the final states; the presentation columns also while Pending approval) | no | no | no | no |
+| change state → Pending approval (endorse, comment; v1.3: refused while a version that requires a presentation has none) | no | no | function | no |
 | change state → Declined (ESG lead declines at Potential or Pending approval, comment) | no | no | function | no |
 | change state → Approved or Declined (committee decision: comment, people in the room, date) | no | no | function | no |
 | change state → Obsolete (withdraw an Approved version, comment) | no | no | function | no |
@@ -130,7 +132,26 @@ flag: the role `esg_lead` is the admin (spec §5, Governor's build decision).
 
 ### storage buckets
 
-None. The tool stores no files (spec §5).
+One bucket from v1.3 (spec §5): `presentations`, private, one object per project version under
+the key `<project id>/presentation.pptx`, PowerPoint only (the `.pptx` extension and its MIME
+type), at most 20 MB, read through signed URLs only. An object belongs to the project version
+in its folder (Section 2), so every row below follows the project.
+
+| Action | site user | CFO | ESG lead (admin) | anon |
+|---|---|---|---|---|
+| upload (the presentation of a version I own, while it is Potential and requires one) | own | no | own (group projects) | no |
+| replace (overwrite the same key; same conditions as upload) | own | no | own (group projects) | no |
+| read (download through a signed URL valid for 60 seconds; follows the project read) | own | yes | yes | no |
+| update (anything else: move, copy, metadata) | no | no | no | no |
+| delete | no | no | no | no |
+| public URL | none: the bucket is private | none | none | none |
+| templates (the three `.pptx` files under `/templates/` on the site; static files, not bucket objects, no data in them) | yes | yes | yes | reachable by URL without a login, as every static file of the site is; accepted by the builder because the templates hold no data |
+
+From Pending approval on the file is frozen for everyone, the ESG lead included: upload and
+replace require Potential. A version that existed before v1.3, and every demo row the reset
+ingests, carries no file and accepts none (`presentation_required` false). Nobody deletes a
+file through the app; the platform owner empties the bucket in the Supabase dashboard before a
+workshop, as the runbook in docs/demo-portfolio.md says.
 
 ---
 
@@ -144,6 +165,7 @@ clause of every scoped policy when the rules go on.
 - **reference_figures**: a row belongs to the site in `site_id`; a group row (`site_id` empty) belongs to the ESG lead.
 - **profiles**: for reading, a row belongs to the site in `site_id`; for writing, to nobody: only the admin function changes a profile, and never the caller's own.
 - **project_history, reference_figures_history**: a row follows its parent row.
+- **presentations (bucket)**: an object belongs to the project version named by its folder; whoever may read the project may read the object; the owner of the version (the site for a site project, the ESG lead for a group project) uploads and replaces it while the version is Potential and requires a presentation. The object never moves to another version: a new version starts without one.
 
 "Me" in every policy is the profile whose `auth_user_id` is the signed-in identity and whose
 `retired_at` is empty. A login with no profile, or with a retired one, is nobody.
@@ -206,6 +228,21 @@ nothing to add. The demo portfolio (reference figures, the 37 projects, their de
 history) moves from the fixture files into the real tables in the same phase, by a seed
 migration or a data fix, so the deployed tool shows the demo data to the named people.
 
+### v1.3 delta (11 October 2026): the approval presentation
+
+Added by named migrations after the access phase; nothing here is a rebuild. Every line of
+the policy plan (50 to 62) is built with the mechanism it names.
+
+| Object | Add | Why |
+|---|---|---|
+| projects | `presentation_file_name` text (the uploaded file's name as shown on the Project page; the object key is always `<id>/presentation.pptx`), `presentation_uploaded_by` uuid → profiles, `presentation_uploaded_at` timestamptz, `presentation_required` boolean not null default true; a check that the file name ends in `.pptx` and that name, uploader and time are set together. The migration sets `presentation_required = false` on every version that exists when it runs. The column trigger (`projects_protect`): the owner may write the file name while the version is Potential and requires a presentation, and only when an object exists under the key; the trigger sets the uploader to the caller's profile and the time to now; it refuses `presentation_required` and the uploader columns from every session; from Pending approval on every presentation column is refused, for the ESG lead too (`edit_project_figures` never touches them). | the record of the file, and its freeze |
+| project_history | the history trigger (`projects_write_history`) writes a row with field `presentation`, the previous and the new file name, the uploader and the time, on every change of the file name. | "every upload and replacement is a history row" |
+| storage: bucket `presentations` | `public = false`, `file_size_limit` 20971520, `allowed_mime_types` = `application/vnd.openxmlformats-officedocument.presentationml.presentation`. Policies on `storage.objects` for `bucket_id = 'presentations'`: SELECT where the object's folder is a project the caller may read (the projects read policy applies inside the subquery); INSERT and UPDATE where the key is `<project id>/presentation.pptx` and the project is the caller's own version (site user: `site_id` = my site; ESG lead: scope `group`), is Potential and requires a presentation; no DELETE policy; no policy for `anon`. The signed URL is created by the screen with the caller's session, so the SELECT policy bounds it. | the file, and who reaches it |
+| endorse_project | refuses when the version requires a presentation and the file name is empty or no object exists under the key ("A presentation is required before endorsement"). | "endorsement refused in the database" |
+| resubmit_project, reapprove_project | the new version is created with `presentation_required = true` and the presentation columns empty; the previous version keeps its file. | a new version needs its own deck |
+| supabase/demo-reset.sql | ingests the 38 demo rows with `presentation_required = false`; it does not touch the bucket (plain data statements only). The runbook in docs/demo-portfolio.md tells the platform owner to empty the bucket in the dashboard before a workshop: the files of the deleted workshop projects are unreachable by then (no project row, so no policy reaches them) and are removed there. | the demo stays exempt |
+| screens | New project form: the "Approval presentation" block (three template downloads, the chosen category highlighted) and the required file field; Project page: the presentation section with Download, Replace or Attach. No other screen changes; the CSV and the review pack are unchanged. | spec §8 |
+
 ---
 
 ## 6. Policy plan (login and rules together; one line per `own` and per `no`)
@@ -267,6 +304,19 @@ the short-run `anon` rule.
 | 47 | profiles | the Users screen | site user, CFO | the route is hidden and refuses them; the table rules (lines 35 to 38) hold behind it | screen + lines 35 to 38 | Sam opening /users is sent to the Overview; Zee likewise |
 | 48 | projects | the New project form | CFO | the route refuses the CFO; line 7 holds behind it | screen + line 7 | Sam has no Register button and /projects/new sends him back |
 | 49 | profiles | login | every named person | magic link, sign-ups off; no password, so no Change password screen | Supabase Auth | Zee, Sam and Zyad each receive a link and land on the Overview scoped to their role |
+| 50 | presentations (bucket) | upload | site user / ESG lead (group) | insert into the bucket only under the key `<project id>/presentation.pptx` where the project is a version I own (a site user: `site_id` = my site; the ESG lead: scope `group`), its status is Potential and it requires a presentation; the bucket itself refuses every type but the PowerPoint MIME type and every file over 20 MB | storage policy (INSERT on storage.objects, WITH CHECK) + bucket limits (`allowed_mime_types`, `file_size_limit`) | Zee attaches a .pptx to her new 1200 project; an upload under a 1000 project's id, a group project's id or a Pending approval project's id, a .pdf, or a 25 MB file is refused |
+| 51 | presentations (bucket) | replace | site user / ESG lead (group) | overwrite the same key under the same conditions as line 50 (an upload with upsert is an update of the object row) | storage policy (UPDATE on storage.objects, USING + WITH CHECK) | Zee replaces the file of her Potential project; once it is Pending approval the button is gone and a direct overwrite is refused, for Zyad too |
+| 52 | presentations (bucket) | read (download) | site user / CFO / ESG lead | the object whose folder is a project I may read (lines 3 and 4: the projects read policy applies inside the storage policy); the screen asks for a signed URL valid for 60 seconds and the browser saves the file under its original name | storage policy (SELECT on storage.objects through projects) + screen (signed URL) | Zee downloads the file of a 1200 project; a signed URL for a 1000 project's file is refused; Sam and Zyad download any |
+| 53 | presentations (bucket) | any | anon | no policy; the bucket is private, so no public URL exists | none (default deny) + bucket private | a logged-out request for any object, and the public URL of any object, returns an error |
+| 54 | presentations (bucket) | upload / replace | CFO | no policy | none | Sam has no file field and no Replace button; a direct upload is refused |
+| 55 | presentations (bucket) | delete | everyone | no policy | none | no delete works from any account; a replacement overwrites, it never deletes |
+| 56 | projects | update (presentation columns) | site user / ESG lead (group) | the owner records the file name on the row while Potential (lines 8 and 9 carry the update); the column trigger sets `presentation_uploaded_by` to me and `presentation_uploaded_at` to now whenever the file name changes, refuses a file name when no object exists under the key, refuses the presentation columns on a version that does not require a presentation or is not Potential, and refuses `presentation_required` and the uploader columns from every session | policy (UPDATE, lines 8 and 9) + column trigger | Zee's upload records the file name, Zee and the time; writing `presentation_uploaded_by` or `presentation_required` directly, or a file name on a Pending approval row, is refused |
+| 57 | projects | change state → Pending approval | ESG lead | `endorse_project` (line 12) refuses a version that requires a presentation and has none: the file name empty, or no object under the key | function | Zyad endorses a v1.3 project without a presentation: refused with "A presentation is required before endorsement"; a version from before the rule is endorsed as before |
+| 58 | project_history | write (presentation) | everyone | the history trigger writes a row with field `presentation`, the previous and the new file name, the uploader and the time, on every upload and replacement | trigger | after an upload the history shows presentation: (none) → the file name, Zee, now; after a replacement the old and the new name |
+| 59 | projects | create (resubmit) / change state → re-approval | site user / ESG lead | `resubmit_project` and `reapprove_project` (lines 16 and 17) create version n+1 with `presentation_required` true and no file; the previous version keeps its own | function | Zee resubmits a Declined 1200 project: v2 shows "No presentation yet" and Attach; Zyad's re-approval likewise; the Declined or Obsolete version still shows its file |
+| 60 | projects | exempt versions | everyone | every version that exists when the v1.3 migration runs, and every demo row the reset script ingests, has `presentation_required` false: no file can be attached (lines 50, 51 and 56 refuse) and the Project page shows "No presentation (registered before the rule)" | data (migration + reset script) + lines 50, 51, 56 | PRJ-0034 shows the line and no file field; endorsing it works; an upload under its id is refused |
+| 61 | projects | the New project form | site user / ESG lead | the form refuses to submit without a file, with a file that is not .pptx, or with a file over 20 MB, inline; the row is saved first (its id is the folder), then the file is uploaded, then the file name is recorded; if the upload fails the project exists in Potential without a presentation and the Project page offers Attach | screen + lines 50, 56, 57 | Zee submits without a file: "Attach the approval presentation (.pptx, max 20 MB)"; with a .pdf the same line; with a valid file the Project page shows it with her name and the time |
+| 62 | templates | download | every signed-in user | the three templates are static files of the site under `/templates/`, linked from the form only; not in the bucket, not in any table. A static file on Netlify is reachable by its URL without a login; the builder accepts this because the templates hold no data | screen (static files) | Zee, Sam and Zyad download each template from the form; the chosen category's template is highlighted |
 
 Default deny applies to every table: where no line above says yes, the answer is nothing.
 `current_profile_id()` is the one helper every policy checks first; it is empty for a login
@@ -281,7 +331,8 @@ person's session and as a logged-out visitor, with the result pasted into PROGRE
 "Refusal test record". No saved script, no test-credential file: the attempts are made in
 the session and the record is the evidence. **Half B (the named people):** every test in this
 table, run as the named person on the screen. Any later change to a rule re-runs both halves
-before the push.
+before the push. The v1.3 lines (50 to 62) are part of the gate: half A through the API as
+Zee, Sam, Zyad and logged out, half B on the screens as the three people, before the merge.
 
 ---
 
@@ -315,6 +366,15 @@ before the push.
    `created_at`, `updated_by`, `updated_at`; lookup tables (`sites`, `targets`) carry
    `updated_by`, `updated_at`, `active`; `projects` has `project_history` and
    `reference_figures` has `reference_figures_history`, each written by a trigger.
+6. Files (v1.3): one private bucket, `presentations`, one PowerPoint file per project version
+   under the fixed key `<project id>/presentation.pptx`, at most 20 MB. The refusal lives in
+   the storage policies and the triggers, never only in the form: the owner uploads and
+   replaces while the version is Potential and requires a presentation; reading follows the
+   project and happens through a short-lived signed URL; from Pending approval on the file is
+   frozen for everyone, the ESG lead included; `anon` reaches no object and no public URL
+   exists; nobody deletes a file through the app; endorsement is refused in the database while
+   a required presentation is missing; versions from before the rule and the demo rows are
+   exempt and accept no file.
 
 ---
 
@@ -329,7 +389,10 @@ nothing. The ESG lead (Zyad Hatquai) is the administrator: they register group p
 endorse, decline and record committee decisions, mark projects obsolete or send them back for
 re-approval, set the targets, keep the site list, add and retire users, and can anonymise a
 person's name on a data-protection request; even they cannot change an approved, retired or
-obsolete version in place. Nothing is ever deleted. The rules are enforced in the database
+obsolete version in place. From v1.3 every new project version carries its approval presentation
+as a PowerPoint file: the site (or the ESG lead for a group project) attaches it on registration
+and can replace it until endorsement; after that it is frozen, readable by everyone who can read
+the project, deleted by nobody. Nothing is ever deleted. The rules are enforced in the database
 itself, so they hold whatever screen or tool reaches the data. The Supabase, Netlify, Resend
 and GitHub accounts are held personally by Zyad Hatquai; moving them to a company account
 changes nothing in the rules.

@@ -1,6 +1,6 @@
 # Demo portfolio and reset — Ravensberg Project Tracker
 
-The workshop runs three times on the same case. This file is the case as data and the way back to it: what the demo portfolio contains, who the people are, what a workshop changes, and how the platform owner puts everything back before the next run. Written 9 October 2026 (session 2).
+The workshop runs three times on the same case. This file is the case as data and the way back to it: what the demo portfolio contains, who the people are, what a workshop changes, and how the platform owner puts everything back before the next run. Written 9 October 2026 (session 2); the approval presentation (spec v1.3) added 11 October 2026 (session 3).
 
 ## 1. The case in one paragraph
 
@@ -27,7 +27,7 @@ The demo state (the seed of 9 October 2026; the reset brings exactly this back):
 | targets | 4 | emissions 42 %, water absolute 10 %, water intensity 20 %, waste diversion 95 %; base year 2024, target year 2030 |
 | profiles | 10 | the three named people and the seven made-up site users above |
 | reference_figures | 20 | FY2024 and FY2025 actuals for all seven sites; 2030 output plans for six sites (1500 Werk Herford has none, so its intensity path is the labelled estimate) |
-| projects | 38 rows, 37 project codes | PRJ-0001 to PRJ-0037; PRJ-0010 exists as a declined version 1 and an approved version 2 |
+| projects | 38 rows, 37 project codes | PRJ-0001 to PRJ-0037; PRJ-0010 exists as a declined version 1 and an approved version 2. All 38 are exempt from the approval presentation (registered before the rule): their pages show "No presentation (registered before the rule)", they take no file, and endorsing one needs none |
 | decisions | 57 | endorsements, committee decisions (approvals and declines), two declines at endorsement, one obsolete |
 | project_history | 99 | the audit trail of every row |
 
@@ -42,6 +42,7 @@ Rows that make a good walk-through:
 - **PRJ-0012, 1400, Obsolete** (Boiler economisers): left the pathway when the heat pump replaced the boiler house; reinstate is possible because no newer version exists.
 - **PRJ-0021, 1400, Potential**, start year 2031: accepted with the warning that it contributes nothing to 2030.
 - **PRJ-0033, 1400, Pending approval** (Sludge dewatering): takes site 1400 over the 95 % waste threshold if approved.
+- **A new project registered live** (v1.3): the form offers the three presentation templates, refuses to save without a .pptx, and the Project page then shows the file with Download and Replace; Zyad's Endorse is refused on a resubmitted or re-approved version until its owner attaches a deck. Every project from PRJ-0038 on carries a presentation.
 
 The reporting year selector rebuilds the portfolio as it stood at the end of 2025 (fewer approvals, the gaps larger); the current year is as of today.
 
@@ -53,8 +54,9 @@ A workshop touches the real tables: endorsements, decisions, new projects, resub
 - **Put back by id:** the ten demo profiles (name, role, site, retired state), the seven sites (name, city, type, active) and the four targets (value, years, reason cleared). A site added in the workshop is deactivated, never deleted.
 - **People:** every profile that has a login is kept, including participants added in the workshop, so they can log in again next time; their projects do not survive. A profile without a login that is not in the demo is removed. Login identities (Supabase Auth) are never touched: nobody has to be invited again.
 - **Project codes:** the sequence goes back to PRJ-0037, so the next registered project is PRJ-0038 again.
+- **Presentations (v1.3):** the 38 demo rows come back exempt (`presentation_required` false, no file). The script does not touch the bucket `presentations`: the files that workshop projects uploaded stay in the bucket, unreachable once their project rows are gone (no row, no policy reaches them), until the platform owner empties the bucket in the dashboard (step 4 below). The three templates are files of the website, not of the bucket, and need nothing.
 
-Not touched: the Auth users, the SMTP settings, the email templates, the Netlify site, this repository.
+Not touched: the Auth users, the SMTP settings, the email templates, the Netlify site, this repository, the bucket (emptied by hand, step 4).
 
 ## 5. The reset, step by step
 
@@ -64,8 +66,9 @@ Who: the platform owner (Zyad), in the Supabase dashboard. Nothing in the app ca
 
 1. Open `supabase/demo-reset.sql` from this repository (GitHub, or the Claude Code session) and copy the whole file.
 2. Supabase dashboard → project ravensberg-consumer-brands → SQL Editor → New query → paste → Run.
-3. The last line of the result shows the counts after the reset: profiles 10 (plus participants with a login), reference figures 20, projects 38, decisions 57, project history 99, next project code PRJ-0038. The script runs as one transaction: if any statement fails, nothing changes and the error names the statement.
-4. Open the live tool as Zyad and check the Overview: Pending approval 6, Potential 6, the emissions card as in section 3. Done.
+3. The last line of the result shows the counts after the reset: profiles 10 (plus participants with a login), reference figures 20, projects 38, decisions 57, project history 99, projects exempt from the presentation 38, next project code PRJ-0038. The script runs as one transaction: if any statement fails, nothing changes and the error names the statement.
+4. Empty the bucket: Supabase dashboard → Storage → `presentations` → open each project folder (one folder per project id, one file `presentation.pptx` in it) → select all → Delete. These are the files of the workshop's projects, whose rows the script just removed; nothing in the app can reach or delete them. Deleting them here is the only delete in the whole tool and happens outside the app, like deleting a login identity.
+5. Open the live tool as Zyad and check the Overview: Pending approval 6, Potential 6, the emissions card as in section 3. Open any demo project: "No presentation (registered before the rule)". Done.
 
 A Claude Code session can run the same script through the Supabase MCP as a data fix, provided the session is allowed to run DELETE statements (on 9 October 2026 it was not, so the SQL Editor is the reliable path).
 
@@ -77,3 +80,4 @@ A Claude Code session can run the same script through the Supabase MCP as a data
 - The demo rows carry fixed dates (projects submitted between January 2025 and October 2026). "Days waiting" and "as of today" grow with the calendar; by a workshop in 2027 the Pending approval rows will have waited longer than they do today. If that matters, shift the dates in the script and commit it.
 - A participant's profile survives the reset, their login too; for a clean Users screen, retire them on the Users screen after the workshop (never delete), or anonymise them on request.
 - The reset is not an undo for a single action; it is all or nothing.
+- Files uploaded in a workshop: a participant's presentation lives in the bucket under its project's id until the platform owner empties the bucket (section 5, step 4). A demo project never has a file. If a participant's project is promoted to demo data (the paragraph above), regenerate the script with `presentation_required` true for it and keep its file in the bucket: the script never writes files.

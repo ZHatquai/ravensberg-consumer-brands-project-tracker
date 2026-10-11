@@ -1,11 +1,12 @@
 # User Stories — Ravensberg Project Tracker
 
-**Written against:** product-spec.md v1.2 · supabase-setup.md as of 9 October 2026
+**Written against:** product-spec.md v1.3 · supabase-setup.md as of 10 October 2026
 **Date:** 9 October 2026 (full run; extends the short run of the same date)
+**Iteration:** 11 October 2026, the approval presentation (spec v1.3): the stories marked v1.3 and refusals 29 to 36. Extended, not replaced.
 **Author:** Zyad Hatquai
 **Status:** Confirmed
 **Population pattern:** P2 internal only, as in access-matrix.md
-**Companion file:** access-matrix.md (every story below cites exactly one cell of it: `[table · action · role]`, one of the seven actions; a story that needs two cells is two stories)
+**Companion file:** access-matrix.md (every story below cites exactly one cell of it: `[table · action · role]`, one of the seven actions; a story that needs two cells is two stories; from v1.3 the bucket `presentations` is a table for this purpose)
 
 > Read by the Project Governor (Iteration Mode) and by Claude Code when it builds the login
 > and the access rules together. Each acceptance line is a screen test: the named person does
@@ -81,6 +82,16 @@ Format, one per line, then its acceptance line indented beneath it:
   Acceptance: Zee retires a Declined 1200 project; it shows Retired with the comment; retiring a 1000 project or an Approved one is refused.
 - **As a site user, I cannot open a project of another site, so that nothing leaks.** `[projects · read · site user]` (= own)
   Acceptance: Zee opens the URL of a 1000 project and sees "not found"; the API returns no row.
+- **(v1.3) As a site user, I download the approval presentation of my site's project, so that I can read what the committee decides on.** `[presentations · read · site user]`
+  Acceptance: Zee opens a 1200 project registered under v1.3 and sees the presentation section with the file name, who uploaded it and when; Download saves the file under its original name; the link she used expires after a minute.
+- **(v1.3) As a site user, I cannot download another site's presentation, so that nothing leaks.** `[presentations · read · site user]` (= own)
+  Acceptance: a signed URL requested for a 1000 project's file from Zee's session is refused; the object list of the bucket shows her nothing of 1000.
+- **(v1.3) As a site user, I replace the presentation of my site's project while it is Potential, so that the committee gets the latest deck.** `[presentations · replace · site user]`
+  Acceptance: Zee clicks Replace presentation on a Potential 1200 project, picks a .pptx, and the section shows the new file name, her name and the time; the history has a "presentation" row with the old and the new name.
+- **(v1.3) As a site user, I cannot replace the presentation once the project is Pending approval, so that the committee sees exactly what was endorsed.** `[presentations · replace · site user]` (= no from Pending approval on)
+  Acceptance: the Replace button is gone from Pending approval on; a direct overwrite from Zee's session is refused; the file name on the row cannot be changed either.
+- **(v1.3) As a site user, I attach a presentation to the resubmitted version of my declined project, so that the new case can be endorsed.** `[presentations · upload · site user]`
+  Acceptance: after Resubmit, version 2 shows "No presentation yet: attach one before endorsement" and Attach presentation; Zee attaches a .pptx; the declined version 1 still shows its own file. Until she does, Zyad's Endorse on version 2 is refused.
 
 ### site user — New project form
 
@@ -88,6 +99,14 @@ Format, one per line, then its acceptance line indented beneath it:
   Acceptance: Zee fills every field, submits, and the project is saved in Potential, version 1, with the next sequential project ID; the Project page opens. Every validation rule of spec §8 holds.
 - **As a site user, I cannot register a project for another site or a group project, so that each site owns its own.** `[projects · create (group project) · site user]` (= no)
   Acceptance: the site field is fixed to 1200; an insert naming another site or scope `group` from Zee's session is refused.
+- **(v1.3) As a site user, I download the template for my category and attach the approval presentation when I register a project, so that the committee gets its deck with the case.** `[presentations · upload · site user]`
+  Acceptance: the form shows the "Approval presentation" block with the three templates; before Zee picks a category all three are listed, after she picks Emissions its template is highlighted and downloads; she attaches a .pptx under 20 MB, submits, and the Project page shows the file name, Zee and today; the history has the "presentation" row.
+- **(v1.3) As a site user, I cannot register a project without a presentation, so that no case reaches the committee without its deck.** `[projects · create (site project) · site user]` (screen: the form refuses; the database refuses the endorsement)
+  Acceptance: Submit without a file shows "Attach the approval presentation (.pptx, max 20 MB)" inline, like the other messages; nothing is saved.
+- **(v1.3) As a site user, I cannot attach anything but a PowerPoint file of at most 20 MB, so that the bucket holds presentations only.** `[presentations · upload · site user]` (= no for any other file)
+  Acceptance: a .pdf, a .ppt or a 25 MB .pptx is refused inline on the form; the same file sent straight to the bucket from Zee's session is refused by the bucket's type and size limits.
+- **(v1.3) As a site user, I cannot upload a file under another site's project or a project that is past Potential, so that files follow the same ownership as projects.** `[presentations · upload · site user]` (= own, while Potential)
+  Acceptance: an upload under a 1000 project's id, or under her own Pending approval project's id, from Zee's session is refused.
 
 ### site user — Reference data
 
@@ -130,6 +149,10 @@ Format, one per line, then its acceptance line indented beneath it:
   Acceptance: Sam has no Register button; /projects/new sends him back; a direct insert is refused.
 - **As the CFO, I cannot act on a project, so that decisions stay with the ESG lead.** `[projects · change state → Approved or Declined · CFO]` (= no)
   Acceptance: Sam's rows carry no action buttons; a direct call of a transition function from his session is refused.
+- **(v1.3) As the CFO, I download any project's approval presentation, so that I can read the case behind a decision.** `[presentations · read · CFO]`
+  Acceptance: Sam opens a 1000 project and a group project registered under v1.3 and downloads each file; a version from before the rule shows "No presentation (registered before the rule)".
+- **(v1.3) As the CFO, I cannot upload, replace or delete a presentation, so that the file stays with the project's owner.** `[presentations · upload · CFO]` (= no)
+  Acceptance: Sam has no file field and no Replace button; a direct upload, overwrite or delete from his session is refused.
 
 ### CFO — Reference data and Users (refusals)
 
@@ -151,6 +174,16 @@ Format, one per line, then its acceptance line indented beneath it:
 
 - **As the ESG lead, I endorse a Potential project with a comment, so that it goes to the committee.** `[projects · change state → Pending approval · ESG lead]`
   Acceptance: Zyad clicks Endorse on a Potential row, enters a comment, and the row becomes Pending approval with an endorsement decision and days waiting from today; a second endorsement is refused.
+- **(v1.3) As the ESG lead, I cannot endorse a project that requires a presentation and has none, so that the committee never decides without the deck.** `[projects · change state → Pending approval · ESG lead]` (= refused by the function while the file is missing)
+  Acceptance: on a v1.3 version without a file the Endorse dialog says a presentation is required and the function refuses with "A presentation is required before endorsement"; once the owner attaches one, Endorse works; a version registered before the rule is endorsed as before.
+- **(v1.3) As the ESG lead, I download any project's presentation, so that I can prepare the committee.** `[presentations · read · ESG lead]`
+  Acceptance: Zyad downloads the file of any site's project and of his group projects; a decided version still shows the file the committee saw.
+- **(v1.3) As the ESG lead, I replace the presentation of my own group project while it is Potential, so that the group case is current.** `[presentations · replace · ESG lead]`
+  Acceptance: Zyad replaces the file of a Potential group project; the history logs old and new name; replacing a site's Potential project's file is refused (the site owns it).
+- **(v1.3) As the ESG lead, I cannot replace or remove any presentation from Pending approval on, so that the decided file is the one the committee saw.** `[presentations · replace · ESG lead]` (= no from Pending approval on, the admin included)
+  Acceptance: no Replace button on a Pending approval, Approved, Declined, Retired or Obsolete version; a direct overwrite or delete from Zyad's session is refused; Edit figures changes figures only.
+- **(v1.3) As the ESG lead, I see the re-approved version start without a presentation, so that the owner attaches the deck for the new case.** `[projects · change state → re-approval · ESG lead]`
+  Acceptance: after Re-approve, version n+1 shows "No presentation yet"; the Obsolete version keeps its file; the site attaches a new one while version n+1 is Potential, and Endorse is refused until then.
 - **As the ESG lead, I decline a project at Potential or Pending approval with a comment, so that weak cases are closed early.** `[projects · change state → Declined · ESG lead]`
   Acceptance: Zyad declines; the row shows Declined with the comment and a decision row; the site can resubmit or retire it.
 - **As the ESG lead, I record the committee decision with comment, people in the room and date, so that the approval is on record.** `[projects · change state → Approved or Declined · ESG lead]`
@@ -178,6 +211,8 @@ Format, one per line, then its acceptance line indented beneath it:
   Acceptance: Zyad fills the form with the site fixed to Group, submits, and the project is saved in Potential, version 1, scope group.
 - **As the ESG lead, I cannot register a project for a site, so that each site owns its register.** `[projects · create (site project) · ESG lead]` (= no)
   Acceptance: the form offers no site; an insert with a site from Zyad's session is refused.
+- **(v1.3) As the ESG lead, I attach the approval presentation when I register a group project, so that group projects follow the same rule as site projects.** `[presentations · upload · ESG lead]`
+  Acceptance: the form shows the template block and the file field for Zyad too; without a file the submit is refused inline; with one the group project's page shows the file, Zyad and the time.
 
 ### ESG lead (admin) — Reference data
 
@@ -242,6 +277,14 @@ The screen test list once the login and the rules are on. One line per `no` in t
 | 26 | Zyad, ESG lead | rename a site that projects reference, or change a site code or a target category | refused | sites · update · ESG lead |
 | 27 | anyone | delete a project, a decision, a figure, a profile, a site or a target | no delete anywhere | every table · delete · everyone |
 | 28 | anyone | write a history row | refused; the triggers write them | project_history · write · everyone |
+| 29 | anyone, logged out | read, list or download any object of the bucket, or open a public URL of one | error; the bucket is private, no public URL exists | presentations · any · anon |
+| 30 | Zee, site user | download a 1000 project's presentation, or upload a file under a 1000 project's id | signed URL refused; upload refused | presentations · read / upload · site user |
+| 31 | Zee, site user | register a project without a presentation, with a .pdf, or with a file over 20 MB | refused inline on the form; the bucket refuses the type and the size | presentations · upload · site user |
+| 32 | Zee, site user | replace the file of her project once it is Pending approval, or write the file name on that row | no button; overwrite and update refused | presentations · replace · site user |
+| 33 | Sam, CFO | upload, replace or delete any presentation | no file field, no button; refused | presentations · upload · CFO |
+| 34 | Zyad, ESG lead | endorse a v1.3 version that has no presentation | refused: "A presentation is required before endorsement" | projects · change state → Pending approval · ESG lead |
+| 35 | Zyad, ESG lead | replace or delete the file of a site's project, or of any version from Pending approval on; write `presentation_required` or the uploader columns directly | refused | presentations · replace · ESG lead |
+| 36 | anyone | delete an object of the bucket, or attach a file to a version from before the rule or a demo row | no delete anywhere; upload refused, the page shows "No presentation (registered before the rule)" | presentations · delete · everyone |
 
 ---
 
@@ -253,3 +296,4 @@ The screen test list once the login and the rules are on. One line per `no` in t
 - Change requests on Approved projects raised by sites (spec §12): version 1 has re-approval by the ESG lead only.
 - Suppliers (spec §12): a second population; the matrix is extended, not replaced, when they arrive.
 - Microsoft OAuth / SSO login: the door changes, the rules do not (spec §6).
+- Around the approval presentation (spec §12, v1.3): virus scanning, a slide preview in the browser, PDF conversion, any file type other than .pptx, more than one file per version, evidence documents beyond the presentation.

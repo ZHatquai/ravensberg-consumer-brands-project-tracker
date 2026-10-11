@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAppState } from '../lib/appState.jsx'
 import { data, siteLabel, personName } from '../lib/data.js'
@@ -6,7 +6,8 @@ import { asOfForYear, groupBy, statusAsOf, daysWaiting, TARGET_YEAR, BASE_YEAR }
 import { fmtInt, fmtEur, fmtDate, fmtDateTime, STAGE_LABEL, FIELD_LABEL } from '../lib/format.js'
 import { Card, Eyebrow, StatusDot, SectionTitle } from '../components/ui.jsx'
 import { ActionDialog } from '../components/ActionDialog.jsx'
-import { endorseProject, declineProject, recordCommitteeDecision, markProjectObsolete, reapproveProject, resubmitProject, retireProject, reinstateProject, editProjectFigures } from '../lib/actions.js'
+import { endorseProject, declineProject, recordCommitteeDecision, markProjectObsolete, reapproveProject, resubmitProject, retireProject, reinstateProject, editProjectFigures, uploadPresentation, presentationDownloadUrl } from '../lib/actions.js'
+import { checkPresentationFile, ACCEPT, MAX_LABEL } from '../lib/presentation.js'
 
 const FIGURE_KEYS = ['total_impact', 'annual_impact', 'start_year', 'capex_eur', 'opex_eur_per_year']
 const FIGURE_LABEL = { total_impact: 'Total impact', annual_impact: 'Annual impact', start_year: 'Start year', capex_eur: 'Capex (EUR)', opex_eur_per_year: 'Opex (EUR per year)' }
@@ -18,6 +19,8 @@ export default function ProjectPage() {
   const [dialog, setDialog] = useState(null) // the open action: endorse | decline | record | figures | obsolete | reapprove | resubmit | retire | reinstate
   const [outcome, setOutcome] = useState('Approved')
   const [fig, setFig] = useState({})
+  const [pres, setPres] = useState({ status: 'idle' }) // the presentation section: idle | uploading | downloading | error
+  const fileRef = useRef(null)
   const currentYear = years[years.length - 1]
 
   const view = useMemo(() => {
@@ -62,6 +65,35 @@ export default function ProjectPage() {
     setDialog(key)
   }
   const frozen = ['Approved', 'Declined', 'Retired', 'Obsolete'].includes(p.status)
+  // The approval presentation (v1.3): the owner attaches or replaces it while Potential; frozen from Pending approval on; versions from before the rule take none.
+  const exempt = !p.presentation_required
+  const canAttach = live && own && p.status === 'Potential' && !exempt
+  const needsFile = !exempt && !p.presentation_file_name
+  const pickFile = async (e) => {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    const message = checkPresentationFile(f)
+    if (message) return setPres({ status: 'error', message })
+    setPres({ status: 'uploading' })
+    try {
+      const replaced = !!p.presentation_file_name
+      await uploadPresentation(p.id, f)
+      setPres({ status: 'idle' })
+      notify({ title: `Presentation ${replaced ? 'replaced' : 'attached'} on ${p.project_code}`, lines: [f.name, 'Logged in the history with your name and the time', replaced ? 'The previous file is overwritten' : 'The ESG lead can endorse the project now'] })
+    } catch (err) {
+      setPres({ status: 'error', message: err.message || String(err) })
+    }
+  }
+  const download = async () => {
+    setPres({ status: 'downloading' })
+    try {
+      const url = await presentationDownloadUrl(p.id, p.presentation_file_name)
+      window.location.assign(url)
+      setPres({ status: 'idle' })
+    } catch (err) {
+      setPres({ status: 'error', message: err.message || String(err) })
+    }
+  }
 
   const fields = [
     ['Category', p.category],
@@ -169,6 +201,63 @@ export default function ProjectPage() {
       </Card>
 
       <section>
+        <SectionTitle eyebrow="PowerPoint, one file per version" title="Approval presentation" />
+        <Card>
+          {exempt ? (
+            <p className="text-[14px]">No presentation (registered before the rule).</p>
+          ) : needsFile ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[14px]">
+                <span className="rb-dot rb-dot--attention mr-1.5" aria-hidden="true" />
+                No presentation yet: {canAttach ? 'attach one before endorsement.' : 'its owner attaches one before the ESG lead can endorse this version.'}
+              </p>
+              {canAttach && (
+                <button className="rb-btn rb-btn--primary" onClick={() => fileRef.current?.click()} disabled={pres.status === 'uploading'}>
+                  {pres.status === 'uploading' ? 'Uploading…' : 'Attach presentation'}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <dl className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3 text-[14px]">
+                <div className="col-span-2 md:col-span-1">
+                  <dt className="rb-caption text-[12px]">File</dt>
+                  <dd className="font-semibold break-all">{p.presentation_file_name}</dd>
+                </div>
+                <div>
+                  <dt className="rb-caption text-[12px]">Uploaded by</dt>
+                  <dd className="font-semibold">{personName(p.presentation_uploaded_by)}</dd>
+                </div>
+                <div>
+                  <dt className="rb-caption text-[12px]">Uploaded on</dt>
+                  <dd className="font-semibold">{fmtDateTime(p.presentation_uploaded_at)}</dd>
+                </div>
+              </dl>
+              <div className="flex flex-wrap gap-2">
+                <button className="rb-btn rb-btn--primary" onClick={download} disabled={pres.status === 'downloading'}>
+                  {pres.status === 'downloading' ? 'Preparing…' : 'Download'}
+                </button>
+                {canAttach && (
+                  <button className="rb-btn" onClick={() => fileRef.current?.click()} disabled={pres.status === 'uploading'}>
+                    {pres.status === 'uploading' ? 'Uploading…' : 'Replace presentation'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          {canAttach && <input ref={fileRef} type="file" accept={ACCEPT} className="hidden" onChange={pickFile} aria-label="Presentation file" />}
+          {pres.status === 'error' && <div className="rb-error mt-2">{pres.message}</div>}
+          {!exempt && (
+            <p className="rb-caption text-[12px] mt-3">
+              {p.status === 'Potential'
+                ? `One PowerPoint file (.pptx, max ${MAX_LABEL}) per version, replaceable by its owner while Potential; frozen from endorsement on. Every upload is in the history. The download link is valid for a minute.`
+                : 'Frozen since endorsement: this is the file the committee decides on. The download link is valid for a minute.'}
+            </p>
+          )}
+        </Card>
+      </section>
+
+      <section>
         <SectionTitle eyebrow={`${decisions.length} recorded`} title="Decisions" />
         <div className="rb-card overflow-x-auto">
           <table className="rb-table">
@@ -238,7 +327,7 @@ export default function ProjectPage() {
         </div>
       </section>
 
-      {dialog === 'endorse' && <ActionDialog title={`Endorse ${p.project_code}`} intro={`${p.title} goes to the committee as Pending approval.`} confirmLabel="Endorse" onConfirm={async ({ comment }) => {
+      {dialog === 'endorse' && <ActionDialog title={`Endorse ${p.project_code}`} intro={`${p.title} goes to the committee as Pending approval.${needsFile ? ' This version has no approval presentation yet: the database refuses the endorsement until its owner attaches one.' : ''}`} confirmLabel="Endorse" onConfirm={async ({ comment }) => {
             await endorseProject(p.id, comment)
             notify({ title: `${p.project_code} endorsed`, lines: ['Status: Pending approval, now with the committee', `Comment: ${comment}`] })
           }} onClose={() => setDialog(null)} />}
@@ -309,11 +398,11 @@ export default function ProjectPage() {
       {dialog === 'reapprove' && (
         <ActionDialog
           title={`Send ${p.project_code} for re-approval`}
-          intro={`This approved version becomes Obsolete and version ${p.version + 1} opens in Potential with the same figures, to be edited and approved again from the start. The covered figure drops at once.`}
+          intro={`This approved version becomes Obsolete and version ${p.version + 1} opens in Potential with the same figures, to be edited and approved again from the start. The covered figure drops at once. The new version starts without a presentation; its owner attaches one before endorsement.`}
           confirmLabel="Start re-approval"
           onConfirm={async ({ comment }) => {
             const newId = await reapproveProject(p.id, comment)
-            notify({ title: `${p.project_code} sent for re-approval`, lines: [`Version ${p.version} is now Obsolete and out of every target figure`, `Version ${p.version + 1} opened in Potential with the same figures; its owner can edit it, then you endorse it`, `Comment: ${comment}`], path: `/projects/${newId}` })
+            notify({ title: `${p.project_code} sent for re-approval`, lines: [`Version ${p.version} is now Obsolete and out of every target figure`, `Version ${p.version + 1} opened in Potential with the same figures and no presentation; its owner edits it and attaches the deck, then you endorse it`, `Comment: ${comment}`], path: `/projects/${newId}` })
             navigate(`/projects/${newId}`)
           }}
           onClose={() => setDialog(null)}
@@ -322,12 +411,12 @@ export default function ProjectPage() {
       {dialog === 'resubmit' && (
         <ActionDialog
           title={`Resubmit ${p.project_code}`}
-          intro={`Version ${p.version + 1} is created in Potential with the same project ID and figures, linked to this declined version; the form then opens so you can revise it before endorsement.`}
+          intro={`Version ${p.version + 1} is created in Potential with the same project ID and figures, linked to this declined version; the form then opens so you can revise it. It starts without a presentation: attach the revised deck on its project page before endorsement.`}
           confirmLabel="Create the new version"
           comment={false}
           onConfirm={async () => {
             const newId = await resubmitProject(p.id)
-            notify({ title: `${p.project_code} resubmitted`, lines: [`Version ${p.version + 1} created in Potential, linked to version ${p.version}`, 'Revise it below and save; the ESG lead endorses it from there'], path: `/projects/${newId}/edit` })
+            notify({ title: `${p.project_code} resubmitted`, lines: [`Version ${p.version + 1} created in Potential, linked to version ${p.version}`, 'Revise it below and save, then attach the revised presentation on its project page; the ESG lead endorses it from there'], path: `/projects/${newId}/edit` })
             navigate(`/projects/${newId}/edit`)
           }}
           onClose={() => setDialog(null)}

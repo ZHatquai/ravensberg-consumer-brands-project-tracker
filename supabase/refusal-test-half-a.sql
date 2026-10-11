@@ -4,7 +4,9 @@
 -- set on the seeded profile inside the transaction, the role is switched to authenticated (or anon) and the
 -- JWT claims carry that id, exactly as PostgREST does for a session. Results: see PROGRESS.md, Refusal test record.
 -- Re-run after any change to a policy, trigger or function; every row must read ok = true.
--- Runs: 9 Oct 2026 session 2, 119 cases ok; 9 Oct 2026 after the half B fixes (decision date, target reason), 126 cases ok.
+-- Runs: 9 Oct 2026 session 2, 119 cases ok; 9 Oct 2026 after the half B fixes (decision date, target reason), 126 cases ok;
+-- 11 Oct 2026 session 3 (v1.3, the approval presentation: the bucket, the presentation columns, the endorsement check), 190 cases ok (65 of them v1.3).
+-- The bucket's type and size limits and the signed URL are enforced by the Storage API, outside SQL: those are half B tests on the screen.
 -- The read checks are relative (rows outside the caller's scope = none; own rows = some) so live data can drift.
 begin;
 create temp table results (n serial, label text, expected text, got text, ok boolean);
@@ -14,6 +16,11 @@ update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000003'
 update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000004' where email = 'dirk.sauer@ravensberg-cb.example';  -- Dirk, retired
 update public.profiles set auth_user_id = 'a0000000-0000-4000-8000-000000000005' where email = 'miriam.koch@ravensberg-cb.example'; -- Miriam, site user 1300 (Anke was retired and anonymised during half B)
 -- a0…09 = a login with no profile
+-- v1.3 set-up (as the platform owner, bypassing RLS): a stored file for PRJ-0001 (1000, Approved, exempt) so that reads can be tested,
+-- and a Potential 1200 version registered before the rule (presentation_required false), as the migration left every existing version.
+insert into storage.objects (bucket_id, name, metadata) values ('presentations', '72bba7f9-088b-597b-b270-54f925888ce6/presentation.pptx', '{"size": 1}');
+insert into public.projects (id, title, category, scope, site_id, description, total_impact, annual_impact, unit, start_year, capex_eur, opex_eur_per_year, owner_name, created_by, updated_by, presentation_required)
+values ('b0000000-0000-4000-8000-000000000003', 'Before the rule', 'Water', 'site', (select id from public.sites where code = '1200'), 'd', 100, 10, 'm³ per year', 2027, 0, 0, 'o', '643de8b6-386c-43a9-9c9a-40cf0ddb1501', '643de8b6-386c-43a9-9c9a-40cf0ddb1501', false);
 
 do $do$
 declare r record; v_got text; v_n bigint; v_ok boolean;
@@ -73,6 +80,63 @@ begin
     ('Zy endorses without a comment', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project('b365b81e-22b5-560a-aca4-1abaaa8559ab', ' ')$q$),
     ('Zy endorses a Potential project', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project('b365b81e-22b5-560a-aca4-1abaaa8559ab', 'Good case')$q$),
     ('Zy endorses it a second time', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project('b365b81e-22b5-560a-aca4-1abaaa8559ab', 'again')$q$),
+    -- v1.3: the approval presentation (docs/access-matrix.md lines 50 to 61; user-stories.md refusals 29 to 36)
+    ('v1.3 Zy endorses a new project without a presentation', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project('b0000000-0000-4000-8000-000000000001', 'c')$q$),
+    ('v1.3 Zee inserts a project with a file name already set', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.projects (title, category, scope, site_id, description, total_impact, annual_impact, unit, start_year, capex_eur, opex_eur_per_year, owner_name, presentation_file_name) values ('t', 'Emissions', 'site', (select id from public.sites where code = '1200'), 'd', 100, 10, 'tCO₂e per year', 2027, 0, 0, 'o', 'x.pptx')$q$),
+    ('v1.3 Zee inserts a project marked exempt', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into public.projects (title, category, scope, site_id, description, total_impact, annual_impact, unit, start_year, capex_eur, opex_eur_per_year, owner_name, presentation_required) values ('t', 'Emissions', 'site', (select id from public.sites where code = '1200'), 'd', 100, 10, 'tCO₂e per year', 2027, 0, 0, 'o', false)$q$),
+    ('v1.3 Zee records a file name before the upload', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = 'Zee deck.pptx' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zee uploads under a 1000 project', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', '084c757b-4378-581c-8b7c-be397ec3566e/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Zee uploads under a Pending approval 1200 project', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', '1badd089-2050-5c09-b4d9-a40b250a11df/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Zee uploads under a 1200 version registered before the rule', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000003/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Zee writes a file name on the version registered before the rule', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = 'x.pptx' where id = 'b0000000-0000-4000-8000-000000000003'$q$),
+    ('v1.3 Zy endorses the version registered before the rule, no file', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project('b0000000-0000-4000-8000-000000000003', 'Before the rule')$q$),
+    ('v1.3 Zee uploads under a key that is not the fixed one', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000001/other.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Sam uploads under a Potential project', 'refused', 'a0000000-0000-4000-8000-000000000002', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000001/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 no profile uploads', 'refused', 'a0000000-0000-4000-8000-000000000009', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000001/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 retired (Dirk) uploads', 'refused', 'a0000000-0000-4000-8000-000000000004', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000001/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 anon uploads', 'refused', 'anon', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000001/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Zy uploads under Zee''s Potential project', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000001/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Zee uploads under her own Potential project (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000001/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Zee uploads a second object under the same key', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000001/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Zee records the file name (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = 'Zee deck.pptx' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 the uploader and the time were set by the trigger', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.projects where id = 'b0000000-0000-4000-8000-000000000001' and presentation_file_name = 'Zee deck.pptx' and presentation_uploaded_by = '643de8b6-386c-43a9-9c9a-40cf0ddb1501' and presentation_uploaded_at is not null$q$),
+    ('v1.3 the upload is in the history (file name, who)', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.project_history where project_id = 'b0000000-0000-4000-8000-000000000001' and field = 'presentation' and old_value is null and new_value = 'Zee deck.pptx' and changed_by = '643de8b6-386c-43a9-9c9a-40cf0ddb1501'$q$),
+    ('v1.3 Zee sets the uploader herself', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_uploaded_by = '67768eec-9c36-4f87-8868-f1edb7f14474' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zee sets the upload time herself', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_uploaded_at = now() - interval '1 day' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zee marks her project exempt', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_required = false where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zee removes the file name', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = null where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zee records a file name that is not .pptx', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = 'deck.pdf' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zee replaces her file (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$update storage.objects set metadata = '{"size": 2}' where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Zee moves her file under a 1000 project', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$update storage.objects set name = '72bba7f9-088b-597b-b270-54f925888ce6/presentation.pptx' where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Zee replaces the file name (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = 'Zee deck v2.pptx' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 the replacement is in the history with old and new name', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.project_history where project_id = 'b0000000-0000-4000-8000-000000000001' and field = 'presentation' and old_value = 'Zee deck.pptx' and new_value = 'Zee deck v2.pptx'$q$),
+    ('v1.3 Zee replaces the file under the same name (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = 'Zee deck v2.pptx' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 a replacement under the same name is logged too', 'rows 2', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.project_history where project_id = 'b0000000-0000-4000-8000-000000000001' and field = 'presentation' and new_value = 'Zee deck v2.pptx'$q$),
+    ('v1.3 Zee reads her own project''s file', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from storage.objects where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Zee reads a 1000 project''s file', 'none', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from storage.objects where name = '72bba7f9-088b-597b-b270-54f925888ce6/presentation.pptx'$q$),
+    ('v1.3 Zee lists the bucket: nothing outside her project', 'none', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from storage.objects where bucket_id = 'presentations' and name <> 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Sam reads a 1000 project''s file', 'some', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from storage.objects where name = '72bba7f9-088b-597b-b270-54f925888ce6/presentation.pptx'$q$),
+    ('v1.3 Sam reads Zee''s file', 'some', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from storage.objects where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Sam replaces a file', 'none', 'a0000000-0000-4000-8000-000000000002', $q$update storage.objects set metadata = '{"size": 3}' where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Sam writes a file name', 'none', 'a0000000-0000-4000-8000-000000000002', $q$update public.projects set presentation_file_name = 'x.pptx' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Sam deletes a file', 'none or refused', 'a0000000-0000-4000-8000-000000000002', $q$delete from storage.objects where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Zee deletes her own file', 'none or refused', 'a0000000-0000-4000-8000-000000000001', $q$delete from storage.objects where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Zy deletes a file', 'none or refused', 'a0000000-0000-4000-8000-000000000003', $q$delete from storage.objects where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 the file is still there after the delete attempts', 'rows 1', 'a0000000-0000-4000-8000-000000000002', $q$read:select * from storage.objects where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 anon reads the bucket''s objects', 'none', 'anon', $q$read:select * from storage.objects where bucket_id = 'presentations'$q$),
+    ('v1.3 anon reads the bucket row', 'none', 'anon', $q$read:select * from storage.buckets$q$),
+    ('v1.3 no profile reads objects', 'none', 'a0000000-0000-4000-8000-000000000009', $q$read:select * from storage.objects$q$),
+    ('v1.3 retired (Dirk) reads objects', 'none', 'a0000000-0000-4000-8000-000000000004', $q$read:select * from storage.objects$q$),
+    ('v1.3 Zy reads every file', 'rows 2', 'a0000000-0000-4000-8000-000000000003', $q$read:select * from storage.objects where name in ('b0000000-0000-4000-8000-000000000001/presentation.pptx', '72bba7f9-088b-597b-b270-54f925888ce6/presentation.pptx')$q$),
+    ('v1.3 Zy replaces a site''s file', 'none', 'a0000000-0000-4000-8000-000000000003', $q$update storage.objects set metadata = '{"size": 4}' where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Zy writes the file name on a site''s Potential project', 'none', 'a0000000-0000-4000-8000-000000000003', $q$update public.projects set presentation_file_name = 'x.pptx' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zy uploads under his own group project (own)', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) values ('presentations', 'b0000000-0000-4000-8000-000000000002/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}')$q$),
+    ('v1.3 Zy records the file name on his group project (own)', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$update public.projects set presentation_file_name = 'Group deck.pptx' where id = 'b0000000-0000-4000-8000-000000000002'$q$),
+    ('v1.3 Zy endorses Zee''s project with the file in place', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project('b0000000-0000-4000-8000-000000000001', 'Deck in place')$q$),
+    ('v1.3 Zee replaces the file after endorsement', 'none', 'a0000000-0000-4000-8000-000000000001', $q$update storage.objects set metadata = '{"size": 5}' where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Zee writes the file name after endorsement', 'none', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = 'late.pptx' where id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zy replaces the file after endorsement', 'none', 'a0000000-0000-4000-8000-000000000003', $q$update storage.objects set metadata = '{"size": 6}' where name = 'b0000000-0000-4000-8000-000000000001/presentation.pptx'$q$),
+    ('v1.3 Zy changes the presentation through the figures function', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.edit_project_figures('b0000000-0000-4000-8000-000000000001', '{"presentation_file_name": "x.pptx"}', 'c')$q$),
     ('Sam records a committee decision', 'refused', 'a0000000-0000-4000-8000-000000000002', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Approved', 'c', 'people', current_date)$q$),
     ('Zy records without attendees', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Approved', 'c', '', current_date)$q$),
     ('Zy records an outcome that is not Approved or Declined', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.record_committee_decision('1badd089-2050-5c09-b4d9-a40b250a11df', 'Endorsed', 'c', 'people', current_date)$q$),
@@ -86,6 +150,9 @@ begin
     ('Zy marks an Approved project obsolete', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.mark_project_obsolete('964082cf-2eb5-56c7-b691-885f9cac7df4', 'Closed')$q$),
     ('Zy reinstates it (no newer version)', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.reinstate_project('964082cf-2eb5-56c7-b691-885f9cac7df4', 'Error')$q$),
     ('Zy sends an Approved project for re-approval', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.reapprove_project('72bba7f9-088b-597b-b270-54f925888ce6', 'Changed case')$q$),
+    ('v1.3 the re-approved version requires a presentation and has none', 'some', 'a0000000-0000-4000-8000-000000000003', $q$read:select * from public.projects where supersedes_project_id = '72bba7f9-088b-597b-b270-54f925888ce6' and presentation_required and presentation_file_name is null$q$),
+    ('v1.3 the obsolete version''s file stays', 'some', 'a0000000-0000-4000-8000-000000000003', $q$read:select * from storage.objects where name = '72bba7f9-088b-597b-b270-54f925888ce6/presentation.pptx'$q$),
+    ('v1.3 Zy endorses the re-approved version without a file', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project((select id from public.projects where supersedes_project_id = '72bba7f9-088b-597b-b270-54f925888ce6'), 'c')$q$),
     ('Zy reinstates a version that has a newer one', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.reinstate_project('72bba7f9-088b-597b-b270-54f925888ce6', 'c')$q$),
     ('Zee re-approves', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$select public.reapprove_project('f9934d4e-e6e8-5883-a980-a6785b8ad0c8', 'c')$q$),
     ('Zee reinstates', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$select public.reinstate_project('9688a7f5-fc44-5bd3-99ff-dc5fdc10f9e9', 'c')$q$),
@@ -94,6 +161,12 @@ begin
     ('Zee resubmits a 1000 Declined project', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$select public.resubmit_project('ce116942-e8c4-5a7a-b2cc-83aab108f280')$q$),
     ('Zee resubmits a version that was already resubmitted', 'refused', 'a0000000-0000-4000-8000-000000000001', $q$select public.resubmit_project('cdcb5326-5f0e-5ef2-b7ca-54aea1193b10')$q$),
     ('Zee resubmits her own Declined project', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$select public.resubmit_project('b0000000-0000-4000-8000-000000000001')$q$),
+    ('v1.3 the resubmitted version requires a presentation and has none', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.projects where supersedes_project_id = 'b0000000-0000-4000-8000-000000000001' and presentation_required and presentation_file_name is null$q$),
+    ('v1.3 the declined version keeps its file', 'some', 'a0000000-0000-4000-8000-000000000001', $q$read:select * from public.projects where id = 'b0000000-0000-4000-8000-000000000001' and presentation_file_name = 'Zee deck v2.pptx'$q$),
+    ('v1.3 Zy endorses the resubmitted version without a file', 'refused', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project((select id from public.projects where supersedes_project_id = 'b0000000-0000-4000-8000-000000000001'), 'c')$q$),
+    ('v1.3 Zee uploads under the resubmitted version (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$insert into storage.objects (bucket_id, name, owner, owner_id, metadata) select 'presentations', id::text || '/presentation.pptx', auth.uid(), auth.uid()::text, '{"size": 1}' from public.projects where supersedes_project_id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zee records its file name (own)', 'ok', 'a0000000-0000-4000-8000-000000000001', $q$update public.projects set presentation_file_name = 'Zee deck v3.pptx' where supersedes_project_id = 'b0000000-0000-4000-8000-000000000001'$q$),
+    ('v1.3 Zy endorses the resubmitted version with the file', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.endorse_project((select id from public.projects where supersedes_project_id = 'b0000000-0000-4000-8000-000000000001'), 'Deck in place')$q$),
     ('Miriam retires her own 1300 Declined project', 'ok', 'a0000000-0000-4000-8000-000000000005', $q$select public.retire_project('80797c33-db52-5066-98ab-e7843ceec567', 'Not pursued')$q$),
     ('Sam retires', 'refused', 'a0000000-0000-4000-8000-000000000002', $q$select public.retire_project('e9261aca-0a43-50a2-962d-9face40e695b', 'c')$q$),
     ('Zy resubmits his own Declined group project', 'ok', 'a0000000-0000-4000-8000-000000000003', $q$select public.resubmit_project('e9261aca-0a43-50a2-962d-9face40e695b')$q$),
@@ -172,6 +245,7 @@ begin
       when r.expect = 'refused' then v_got like 'refused%'
       when r.expect = 'ok' then v_got like 'ok %' and v_got <> 'ok 0'
       when r.expect = 'none' then v_got in ('ok 0', 'rows 0')
+      when r.expect = 'none or refused' then v_got in ('ok 0', 'rows 0') or v_got like 'refused%'
       when r.expect = 'some' then v_got like 'rows %' and v_got <> 'rows 0'
       when r.expect like 'rows %' then v_got = r.expect
       else false end;

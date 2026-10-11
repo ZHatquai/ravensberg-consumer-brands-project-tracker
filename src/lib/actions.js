@@ -3,6 +3,7 @@
 // has been reloaded, so the screens recalculate.
 import { getSupabase, errorMessage } from './supabase.js'
 import { reload } from './data.js'
+import { BUCKET, PPTX_MIME, SIGNED_URL_SECONDS, presentationKey, storageMessage } from './presentation.js'
 
 async function rpc(name, args) {
   const { data, error } = await getSupabase().rpc(name, args)
@@ -84,4 +85,26 @@ export async function adminUsers(action, payload) {
   if (!res.ok) throw new Error(body.error || `The admin function failed (${res.status}).`)
   await reload()
   return body
+}
+
+/**
+ * The approval presentation (v1.3): the file goes to the bucket under the project's key (an upsert, so a replacement
+ * overwrites the one file), then its name is recorded on the row; the trigger sets the uploader and the time and the
+ * history gets its row. The storage policies and the trigger refuse anything but the owner's own Potential version.
+ */
+export async function uploadPresentation(projectId, file) {
+  const sb = getSupabase()
+  const { error: upErr } = await sb.storage.from(BUCKET).upload(presentationKey(projectId), file, { upsert: true, contentType: PPTX_MIME, cacheControl: '0' })
+  if (upErr) throw new Error(storageMessage(upErr))
+  const { data, error } = await sb.from('projects').update({ presentation_file_name: file.name }).eq('id', projectId).select('*').single()
+  if (error) throw new Error(errorMessage(error))
+  await reload()
+  return data
+}
+
+/** A signed URL for the project's file, valid for 60 seconds, served under its original name. The read policy bounds it. */
+export async function presentationDownloadUrl(projectId, fileName) {
+  const { data, error } = await getSupabase().storage.from(BUCKET).createSignedUrl(presentationKey(projectId), SIGNED_URL_SECONDS, { download: fileName })
+  if (error) throw new Error(storageMessage(error))
+  return data.signedUrl
 }

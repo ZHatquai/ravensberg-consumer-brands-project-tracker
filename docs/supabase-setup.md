@@ -16,6 +16,7 @@
 | Key system | Publishable / secret keys (`sb_publishable_…` / `sb_secret_…`). The Netlify extension wrote the legacy `eyJ` values on 9 Oct 2026; the builder replaced both by hand the same day (`VITE_SUPABASE_ANON_KEY` = publishable key, `SUPABASE_SERVICE_ROLE_KEY` = secret key, marked secret). Nothing in this repo holds a key value. The legacy keys can be disabled in the dashboard once the live login works (§9) |
 | Auth | Supabase Auth, magic link, sign-ups off; as built in session 2 (§7) |
 | State on 9 October 2026 (session 2) | eight tables (the seven plus `reference_figures_history`), RLS on every one, the policies, triggers and functions of docs/access-matrix.md §6 in place; the demo portfolio seeded (profiles 10, reference_figures 20, projects 38, decisions 57, project_history 99); twenty-three migrations applied and saved in supabase/migrations/; refusal test half A passed (119 cases, supabase/refusal-test-half-a.sql) |
+| State on 11 October 2026 (session 3, spec v1.3) | the approval presentation: four columns on `projects`, the private bucket `presentations` with three policies on `storage.objects`, the upload trigger, the endorsement check; every version existing before (the 38 demo rows) exempt; twenty-six migrations applied and saved; refusal test half A passed (190 cases, 65 of them v1.3) |
 
 ## 2. Tables
 
@@ -126,6 +127,10 @@ RLS on, anon revoked, DELETE and TRUNCATE revoked from authenticated; read follo
 | status | text | not null, default `'Potential'`, in (Potential, Pending approval, Approved, Declined, Retired, Obsolete) |
 | version | integer | not null, default 1, ≥ 1 |
 | supersedes_project_id | uuid | → projects.id; `projects_resubmission_has_predecessor`: set exactly when version > 1 |
+| presentation_file_name | text | v1.3: the approval presentation's file name as uploaded; the object is `presentations/<id>/presentation.pptx`; `projects_presentation_is_pptx`: ends in `.pptx`; written by the owner while Potential, frozen from Pending approval on |
+| presentation_uploaded_by | uuid | → profiles.id; v1.3: set by the trigger `projects_set_presentation`, never by a session |
+| presentation_uploaded_at | timestamptz | v1.3: set by the same trigger (`clock_timestamp()`); `projects_presentation_fields_together`: name, uploader and time are null together or set together |
+| presentation_required | boolean | not null, default true; v1.3: false on every version that existed when the migration ran and on the demo rows the reset ingests (exempt: no file, none accepted, endorsement needs none); never written from a session |
 | created_by, created_at, updated_by, updated_at | audit | as above |
 
 Unique `(project_code, version)` (`projects_code_version`). Sequence `public.project_code_seq` (integer, starts at 1; anon has no usage grant).
@@ -194,21 +199,30 @@ Source: docs/access-matrix.md §6, one line per rule with its mechanism. "Me" = 
 | projects | Declined → Retired (the site for its own, the ESG lead for group projects; comment) | function `retire_project` | §6 line 18 |
 | projects | Obsolete → Approved (reinstate, ESG lead, comment, only while no newer version exists) | function `reinstate_project` | §6 line 19 |
 | projects | no delete | grant | §6 line 21 |
+| projects | v1.3: the owner records the presentation's file name while Potential on a version that requires one, only when the object is in the bucket; the uploader and the time are set by the trigger; `presentation_required`, the uploader and the time are never written from a session; from Pending approval on the file name is frozen for everyone; a file name is replaced, never removed; a session insert carries no presentation and cannot be exempt | policy `projects_update_potential` + triggers `projects_protect`, `projects_set_presentation` | §6 lines 56, 60, 61 |
+| projects | v1.3: endorsement refused while a version that requires a presentation has none (file name empty or no object under the key) | function `endorse_project` | §6 line 57 |
+| projects | v1.3: a resubmitted or re-approved version requires a presentation and starts without one; the previous version keeps its file | function `new_project_version` (inside `resubmit_project`, `reapprove_project`) | §6 line 59 |
+| project_history | v1.3: every upload and replacement is a `presentation` row (old and new file name, uploader, time), a replacement under the same name included | trigger `projects_write_history` | §6 line 58 |
+| storage: bucket `presentations` | read (download through a signed URL of 60 s) follows the project: an object whose key `<project id>/presentation.pptx` names a project the caller may read | storage policy `presentations_read` (SELECT on storage.objects) | §6 line 52 |
+| storage: bucket `presentations` | upload: the owner of the version (site user: own site; ESG lead: group) while it is Potential and requires a presentation, under the fixed key only; the bucket refuses any type but the PowerPoint MIME type and any file over 20 MB | storage policy `presentations_upload` (INSERT) + `file_size_limit`, `allowed_mime_types` | §6 line 50 |
+| storage: bucket `presentations` | replace: overwrite the same key under the same conditions (an upload with upsert) | storage policy `presentations_replace` (UPDATE) | §6 line 51 |
+| storage: bucket `presentations` | anon, a login without a profile, a retired profile, the CFO: no upload, no replace; anon reads nothing; no public URL (bucket private); nobody deletes (no DELETE policy; Supabase also refuses direct deletes from storage tables) | none (default deny) | §6 lines 53 to 55 |
 | decisions | read follows the project | policy `decisions_read` | §6 lines 22, 23 |
 | decisions | written only inside the transition functions; no update, no delete | no write policy + trigger `decisions_protect` + grant | §6 line 24 |
 | project_history | read follows the project; written by its trigger only; no delete | policy `project_history_read`; trigger; grant | §6 lines 25, 26 |
 
-Default deny applies everywhere: where no line says yes, the answer is nothing. The narrow functions mark their transaction with the setting `app.narrow_function = on`; the column triggers let a protected column change only inside such a transaction (or in a migration or the admin function, where auth.uid() is null). Refusal test half A: `supabase/refusal-test-half-a.sql`, 119 cases, all as expected on 9 Oct 2026 (PROGRESS.md, Refusal test record).
+Default deny applies everywhere: where no line says yes, the answer is nothing. The narrow functions mark their transaction with the setting `app.narrow_function = on`; the column triggers let a protected column change only inside such a transaction (or in a migration or the admin function, where auth.uid() is null). Refusal test half A: `supabase/refusal-test-half-a.sql`, 119 cases, all as expected on 9 Oct 2026; 190 cases on 11 Oct 2026 with the v1.3 lines (PROGRESS.md, Refusal test record).
 
 ## 4. Triggers
 
 | Trigger | Table | What it does |
 |---|---|---|
 | `sites_set_updated_at`, `profiles_set_updated_at`, `targets_set_updated_at`, `reference_figures_set_updated_at`, `projects_set_updated_at`, `decisions_set_updated_at` | each table | before update: sets `updated_at = now()` (function `set_updated_at`) |
-| `projects_write_history` | projects | after insert: one `created` row (`PRJ-0001 v1 (Potential)`); after update: one row per changed field with old and new value; `changed_by` = `updated_by`; `comment` = the transaction setting `app.change_comment` (set by the narrow functions) |
+| `projects_write_history` | projects | after insert: one `created` row (`PRJ-0001 v1 (Potential)`); after update: one row per changed field with old and new value; `changed_by` = `updated_by`; `comment` = the transaction setting `app.change_comment` (set by the narrow functions); v1.3: a `presentation` row (old and new file name, `changed_by` = the uploader) whenever `presentation_uploaded_at` changed |
 | `link_profile_on_signup` | auth.users (after insert) | marks the transaction as narrow and sets `profiles.auth_user_id` on the profile whose email matches the new identity's (case-insensitive) and has no link yet; an identity without a profile stays unlinked and reaches nothing |
 | `profiles_protect` | profiles (before insert, update or delete) | refuses every write that is not from a migration, the admin function or a narrow function (`app_write_allowed()` false): no role, site, retired, name or email change from a session, own row included; lower-cases the email on an update |
-| `projects_protect` | projects (before insert or update) | a session insert must be Potential, version 1, no predecessor, and gets `created_by` = me; a session update may not change status, version, project_code, supersedes_project_id, scope, site_id, created_by, created_at; sets `updated_by` = me, `updated_at` = now() |
+| `projects_protect` | projects (before insert or update) | a session insert must be Potential, version 1, no predecessor, with no presentation columns and `presentation_required` true, and gets `created_by` = me; a session update may not change status, version, project_code, supersedes_project_id, scope, site_id, created_by, created_at, nor (v1.3) presentation_required, presentation_uploaded_by, presentation_uploaded_at; sets `updated_by` = me, `updated_at` = now() |
+| `projects_set_presentation` | projects (before update of `presentation_file_name`; fires after `projects_protect` by name order) | v1.3: on every session write of the file name (a replacement under the same name included): refuses unless the version is Potential, requires a presentation, the new name is not null and the object exists under `<id>/presentation.pptx`; then sets `presentation_uploaded_by` = me and `presentation_uploaded_at` = clock_timestamp(). A write with auth.uid() null (the platform owner) passes as written, the constraints apply |
 | `reference_figures_protect` | reference_figures (before insert or update) | a session insert gets created_by, entered_by, updated_by = me; a session update may not change site_id, year, kind, status, created_by, created_at; sets entered_by and updated_by = me |
 | `reference_figures_write_history` | reference_figures (after insert or update) | one `created` row on insert; one row per changed figure column on update, with old and new value, the caller and the transaction comment |
 | `sites_protect` | sites (before insert or update) | refuses a change to `code`; refuses a rename while a project, figure or profile references the site; sets `updated_by`, `updated_at` |
@@ -227,9 +241,12 @@ Every function below is `SECURITY DEFINER` with `SET search_path = ''` and schem
 | `current_profile_id()` | definer | policies and functions (authenticated) | — | the id of the caller's active profile (auth.uid() → auth_user_id, retired_at null), or null |
 | `is_esg_lead()`, `is_cfo()`, `my_site_id()` | definer | policies and functions (authenticated) | — | the caller's role and site, from the active profile |
 | `app_write_allowed()` | definer | triggers | — | true when auth.uid() is null (migration, admin function) or the transaction is inside a narrow function |
-| `link_profile_on_signup()`, `profiles_protect()`, `projects_protect()`, `reference_figures_protect()`, `reference_figures_write_history()`, `sites_protect()`, `targets_protect()`, `decisions_protect()`, `projects_write_history()` | definer | nobody directly (triggers) | — | see §4 |
-| `require_me()`, `require_esg_lead()`, `require_comment(text)`, `begin_narrow(text)`, `lock_project(uuid)`, `owns_project(projects)`, `new_project_version(projects, uuid)`, `write_decision(…)` | definer | nobody directly (internal) | — | the shared steps of the transition functions: identity and role, the required comment, the transaction marker and comment, the row lock, ownership (own site, or group for the ESG lead), the n+1 copy, the decision row |
-| `endorse_project(p_project, p_comment)` | definer | ESG lead | active profile, role, comment, status Potential | → Pending approval; decision row (endorsement, Endorsed); history row |
+| `link_profile_on_signup()`, `profiles_protect()`, `projects_protect()`, `projects_set_presentation()`, `reference_figures_protect()`, `reference_figures_write_history()`, `sites_protect()`, `targets_protect()`, `decisions_protect()`, `projects_write_history()` | definer | nobody directly (triggers) | — | see §4 |
+| `presentation_key(uuid)` | invoker, immutable | policies and the triggers (authenticated) | — | v1.3: the object key of a version's presentation, `<id>/presentation.pptx`, defined once |
+| `presentation_object_exists(uuid)` | definer | nobody directly (the triggers and `endorse_project`) | — | v1.3: whether the object is in the bucket, read with the owner's privileges (a session sees storage.objects only through its own policy) |
+| `presentation_upload_allowed(text)` | invoker | the storage policies (authenticated) | — | v1.3: true when the key names a version the caller owns (site user: own site; ESG lead: scope group) that is Potential and requires a presentation; it reads `projects` under the caller's own read policy |
+| `require_me()`, `require_esg_lead()`, `require_comment(text)`, `begin_narrow(text)`, `lock_project(uuid)`, `owns_project(projects)`, `new_project_version(projects, uuid)`, `write_decision(…)` | definer | nobody directly (internal) | — | the shared steps of the transition functions: identity and role, the required comment, the transaction marker and comment, the row lock, ownership (own site, or group for the ESG lead), the n+1 copy (v1.3: with `presentation_required` true and no file), the decision row |
+| `endorse_project(p_project, p_comment)` | definer | ESG lead | active profile, role, comment, status Potential; v1.3: a version that requires a presentation has its file name and its object ("A presentation is required before endorsement") | → Pending approval; decision row (endorsement, Endorsed); history row |
 | `decline_project(p_project, p_comment)` | definer | ESG lead | role, comment, status Potential or Pending approval | → Declined; decision row (decline, Declined); history row |
 | `record_committee_decision(p_project, p_outcome, p_comment, p_attendees, p_decision_date)` | definer | ESG lead | role, outcome Approved or Declined, comment, attendees, date not after today (Europe/Berlin), status Pending approval | → Approved or Declined; decision row (committee); history row |
 | `mark_project_obsolete(p_project, p_comment)` | definer | ESG lead | role, comment, status Approved | → Obsolete; decision row (obsolete); history row |
@@ -244,7 +261,27 @@ The admin-users Netlify Function (`netlify/functions/admin-users.mjs`, secret ke
 
 ## 6. Buckets
 
-None. No file storage in version 1.
+One, since 11 October 2026 (spec v1.3, builder decision): `presentations`.
+
+| Setting | Value |
+|---|---|
+| `public` | false: no public URL exists; every download is a signed URL the screen creates with the caller's session (60 seconds, `download` set to the original file name), bounded by the SELECT policy |
+| `file_size_limit` | 20971520 (20 MB) |
+| `allowed_mime_types` | `application/vnd.openxmlformats-officedocument.presentationml.presentation` only |
+| Key convention | one object per project version: `<project id>/presentation.pptx` (`presentation_key(id)`); a replacement is an upsert on the same key; the original file name lives in `projects.presentation_file_name` |
+| Who uploads | the owner of the version (a site user for their site's project, the ESG lead for a group project) while it is Potential and requires a presentation (`presentation_upload_allowed`) |
+| Who reads | whoever may read the project (the projects read policy applies inside the storage policy): a site user their site's files, the CFO and the ESG lead all |
+| Delete | nobody through the app: no DELETE policy; Supabase's own trigger `protect_objects_delete` refuses direct SQL deletes as well. The platform owner removes files in the dashboard (Storage → presentations), which the demo runbook asks for before a workshop |
+
+Policies on `storage.objects` (migration `20261011130943_approval_presentation_bucket.sql`), all `to authenticated`, all limited to `bucket_id = 'presentations'`:
+
+| Policy | Command | Rule | Matrix line |
+|---|---|---|---|
+| `presentations_read` | SELECT | the key names a project the caller may read | §6 line 52 |
+| `presentations_upload` | INSERT | `presentation_upload_allowed(name)` | §6 line 50 |
+| `presentations_replace` | UPDATE (USING and WITH CHECK) | `presentation_upload_allowed(name)` | §6 line 51 |
+
+No policy for `anon`, none for DELETE. The table grants on `storage.objects` and `storage.buckets` are Supabase's own (anon and authenticated hold them) and stay as they are: RLS is on and default deny applies, so anon reads no row, and the Storage API returns an error for a private object without a valid signed URL. The templates offered on the form (`public/templates/*.pptx`) are static files of the website, not bucket objects.
 
 ## 7. Auth
 
@@ -271,6 +308,9 @@ Verified on 9 October 2026 in the dashboard: the extension's full list is `SUPAB
 - Reporting year = the portfolio as of the end of that year (status rebuilt from `project_history` status rows); the current year = as of today; every action applies to the current year only.
 - `status` on decisions and reference_figures stays `'active'` in version 1; the calculations ignore rows with status `void`, which never occurs.
 - The security advisor's "RLS enabled, no policy" warnings are gone; "function search_path mutable" never applies (every function sets it).
+- v1.3 (11 Oct 2026): the bucket's type and size limits and the signed URL are enforced by the Storage API, outside SQL, so half A covers the policies and the triggers and half B (the screens) covers the limits and the download. A move of an object between two Potential versions the same owner holds passes the storage policies (WITH CHECK sees only the new key); the endorsement check catches a version whose object went missing. Files of projects the demo reset removes stay in the bucket, unreachable, until the platform owner empties it (docs/demo-portfolio.md §5).
+- v1.3: `presentation_uploaded_at` is `clock_timestamp()`, the moment of the upload, so two uploads in one transaction are told apart; every other audit column stays `now()`.
+- The session's migration tool worked again on 11 Oct 2026 (three migrations applied without the time-out of 9 and 10 Oct); the SQL Editor path stays the fallback.
 
 ## 10. Change log
 
@@ -295,3 +335,6 @@ Verified on 9 October 2026 in the dashboard: the extension's full list is `SUPAB
 | 2 | 9 Oct 2026 | `20261009192200_demo_probe.sql`, `20261009192429_demo_probe1.sql`, `20261009192435_demo_probe2.sql`, `20261009192441_demo_probe3.sql`, `20261009192603_demo_probe4.sql` | probe functions and a comment, used to find out why the migration tool hung on function migrations (it did so regardless of content); to be dropped later |
 | 2 | 9 Oct 2026 | `20261009192938_demo_snapshot_payload_column.sql` | `demo_snapshot.rows` renamed to `payload` while probing |
 | 2 | 10 Oct 2026 | `20261010090000_drop_demo_reset_leftovers.sql` | drops the `demo_snapshot` table and the four probe functions; applied by the builder in the SQL Editor (the session's migration tool timed out) with the same script recording it in `supabase_migrations.schema_migrations`; verified by Claude Code: no leftover object, 23 migrations recorded, demo data untouched |
+| 3 | 11 Oct 2026 | `20261011130852_approval_presentation_schema.sql` | spec v1.3: `projects.presentation_file_name`, `presentation_uploaded_by`, `presentation_uploaded_at`, `presentation_required` (added with default false, so every existing version is exempt without an update, then default true) and their checks; `presentation_key`, `presentation_object_exists`; `projects_protect` and `projects_write_history` extended; `new_project_version` starts a version without a file; `endorse_project` refuses a required presentation that is missing |
+| 3 | 11 Oct 2026 | `20261011130943_approval_presentation_bucket.sql` | the bucket `presentations` (private, 20 MB, PowerPoint MIME type only); `presentation_upload_allowed`; policies `presentations_read`, `presentations_upload`, `presentations_replace` on storage.objects; no anon, no delete |
+| 3 | 11 Oct 2026 | `20261011132042_approval_presentation_upload_trigger.sql` | the presentation checks moved from `projects_protect` into `projects_set_presentation` (before update of `presentation_file_name`), so a replacement under the same name sets the uploader and the time (`clock_timestamp()`) and is logged; `projects_write_history` logs the `presentation` row on every change of the upload time |

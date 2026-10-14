@@ -14,8 +14,11 @@ import { ExportCsvDialog } from '../components/ExportCsvDialog.jsx'
 import { ReviewPackDialog } from '../components/ReviewPackDialog.jsx'
 
 export default function Overview() {
-  const { siteId, year, canRegister, canExportPdf, version } = useAppState()
-  const o = useMemo(() => overview(data, { siteId, year }), [siteId, year, version]) // eslint-disable-line react-hooks/exhaustive-deps
+  const { siteId, canRegister, canExportPdf, version } = useAppState()
+  // The dashboard is always as of today: every project registered until now with its current status, the targets and pathways
+  // as the full view to 2030. The reporting year is a filter of the Project register and the review pack, not of the dashboard.
+  const thisYear = new Date().getUTCFullYear()
+  const o = useMemo(() => overview(data, { siteId, year: thisYear }), [siteId, thisYear, version]) // eslint-disable-line react-hooks/exhaustive-deps
   const [tab, setTab] = useState('emissions')
   const [dialog, setDialog] = useState(null)
   const scopeLabel = siteId ? siteLabel(siteId) : 'Group, all seven sites'
@@ -29,7 +32,7 @@ export default function Overview() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <Eyebrow>
-            {scopeLabel} · reporting year {year}
+            {scopeLabel} · sustainability projects
           </Eyebrow>
           <h1 className="mt-0.5">Overview</h1>
           <div className="rb-rule mt-1.5" />
@@ -192,7 +195,7 @@ export default function Overview() {
         </Card>
       </section>
 
-      {dialog === 'csv' && <ExportCsvDialog onClose={() => setDialog(null)} filters={{}} />}
+      {dialog === 'csv' && <ExportCsvDialog onClose={() => setDialog(null)} filters={{}} year={thisYear} />}
       {dialog === 'pdf' && <ReviewPackDialog onClose={() => setDialog(null)} />}
     </div>
   )

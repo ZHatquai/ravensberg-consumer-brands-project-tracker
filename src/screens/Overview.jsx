@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAppState } from '../lib/appState.jsx'
 import { data, siteLabel } from '../lib/data.js'
 import { overview, FACTOR_SET } from '../lib/calculations.js'
-import { fmtInt, fmtNum, fmtPct } from '../lib/format.js'
+import { fmtInt, fmtNum, fmtPct, signed } from '../lib/format.js'
 import { Card, Eyebrow, SectionTitle, Flag, Estimate } from '../components/ui.jsx'
 import { Meter, SegmentMeter } from '../components/charts/Meter.jsx'
 import { Donut } from '../components/charts/Donut.jsx'
@@ -82,9 +82,7 @@ export default function Overview() {
           <Card>
             <Eyebrow>Emissions</Eyebrow>
             <h3 className="mt-0.5">−{Math.round(e.pct * 100)} % Scope 1+2 by 2030</h3>
-            <p className="rb-caption mt-1 mb-3">
-              Required {fmtInt(e.required)} {e.unit} ({Math.round(e.pct * 100)} % of FY2024 {fmtInt(e.base)} tCO₂e)
-            </p>
+            <RequiredCaption t={e} unit={e.unit} shortUnit="tCO₂e" />
             <Meter required={e.required} covered={e.covered} ifApproved={e.ifApproved} uncovered={e.uncovered} unit="tCO₂e per year" surplus={e.surplus} />
             {e.missing.length > 0 && (
               <div className="mt-2">
@@ -96,15 +94,13 @@ export default function Overview() {
           <Card>
             <Eyebrow>Water</Eyebrow>
             <h3 className="mt-0.5">−{Math.round(wa.pct * 100)} % withdrawal · −{Math.round(wi.pct * 100)} % intensity</h3>
-            <p className="rb-caption mt-1 mb-3">
-              Absolute: required {fmtInt(wa.required)} m³ per year of FY2024 {fmtInt(wa.base)} m³
-            </p>
+            <RequiredCaption t={wa} unit="m³ per year" shortUnit="m³" prefix="Absolute: " />
             <Meter label="Absolute withdrawal" required={wa.required} covered={wa.covered} ifApproved={wa.ifApproved} uncovered={wa.uncovered} unit="m³ per year" surplus={wa.surplus} />
             <div className="mt-4">
               <Meter
                 label={
                   <>
-                    Intensity, {wi.unit}: FY2024 {fmtNum(wi.baseIntensity, 2)} → target {fmtNum(wi.target, 2)} {wi.estimate && <Estimate />}
+                    Intensity, {wi.unit}: FY2024 {fmtNum(wi.baseIntensity, 2)} → target {fmtNum(wi.target, 2)}; business as usual 2030 {fmtNum(wi.bau2030, 2)} (growth {signed2(wi.growth)}) {wi.estimate && <Estimate />}
                   </>
                 }
                 required={wi.required}
@@ -189,7 +185,7 @@ export default function Overview() {
               </button>
             ))}
           </div>
-          {tab === 'emissions' && <EmissionsBridge bridge={e.bridge} factorSet={FACTOR_SET} />}
+          {tab === 'emissions' && <EmissionsBridge bridge={e.bridge} factorSet={FACTOR_SET} estimateSites={e.estimateSites} />}
           {tab === 'water' && <WaterTrajectory wi={wi} />}
           {tab === 'waste' && <WasteBars waste={w} />}
         </Card>
@@ -198,6 +194,17 @@ export default function Overview() {
       {dialog === 'csv' && <ExportCsvDialog onClose={() => setDialog(null)} filters={{}} year={thisYear} />}
       {dialog === 'pdf' && <ReviewPackDialog onClose={() => setDialog(null)} />}
     </div>
+  )
+}
+
+const signed2 = (g) => `${Number(g) < 0 ? '−' : '+'}${fmtNum(Math.abs(Number(g)), 2)}`
+
+/** The required reduction in its two parts (spec §9, growth to 2030): the target share of FY2024 plus the growth to business as usual 2030. */
+function RequiredCaption({ t, unit, shortUnit, prefix = '' }) {
+  return (
+    <p className="rb-caption mt-1 mb-3">
+      {prefix}Required {fmtInt(t.required)} {unit}: {Math.round(t.pct * 100)} % of FY2024 {fmtInt(t.base)} {shortUnit} = {fmtInt(t.requiredBase)}, plus growth to 2030 {signed(t.growth)} (business as usual 2030 {fmtInt(t.bau)}; target {fmtInt(t.target)}){t.estimate && <> <Estimate /></>}
+    </p>
   )
 }
 

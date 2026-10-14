@@ -185,6 +185,35 @@ export function outputPath(refRows, siteId) {
   return { base, plan, estimate, byYear }
 }
 
+/**
+ * Business as usual for one site and one figure (scope12_tco2e or water_withdrawal_m3), spec §9 "Growth to 2030":
+ * the planned 2030 figure on the site's 2030 plan row when entered (source "entered"); otherwise the FY2024 figure grown with the
+ * planned output, the site's intensity held at FY2024 (source "output"); without a planned output the FY2024 figure held flat and
+ * labelled estimate (source "flat"). Null without an FY2024 figure. Growth is never floored: a planned decline is negative growth.
+ */
+export function bauPath(refRows, siteId, field) {
+  const base = num(figure(refRows, siteId, BASE_YEAR, 'actual')?.[field])
+  if (base === null) return null
+  const planned = num(figure(refRows, siteId, TARGET_YEAR, 'plan')?.[field])
+  const out = outputPath(refRows, siteId)
+  let bau
+  let source
+  if (planned !== null) {
+    bau = planned
+    source = 'entered'
+  } else if (out && !out.estimate && out.base > 0) {
+    bau = (base * out.plan) / out.base
+    source = 'output'
+  } else {
+    bau = base
+    source = 'flat'
+  }
+  const growth = bau - base
+  const byYear = {}
+  for (const y of YEARS) byYear[y] = base + (growth * (y - BASE_YEAR)) / (TARGET_YEAR - BASE_YEAR)
+  return { base, bau, growth, source, estimate: source === 'flat', byYear }
+}
+
 // ---------- shared helpers for a target calculation
 
 function activeIn(list, year) {
@@ -205,12 +234,19 @@ function eligible(rows, category, siteId, includedSiteIds) {
 
 function reductionTarget({ sites, refRows, rows, siteId, pct, category, field, siteById }) {
   const siteRows = siteId ? sites.filter((s) => s.id === siteId) : sites.filter((s) => s.active !== false)
-  const bases = siteRows.map((s) => ({ site: s, base: num(figure(refRows, s.id, BASE_YEAR, 'actual')?.[field]) }))
-  const missing = bases.filter((b) => b.base === null).map((b) => b.site)
-  const included = bases.filter((b) => b.base !== null)
+  const paths = siteRows.map((s) => ({ site: s, path: bauPath(refRows, s.id, field) }))
+  const missing = paths.filter((b) => !b.path).map((b) => b.site)
+  const included = paths.filter((b) => b.path)
   const includedIds = new Set(included.map((b) => b.site.id))
-  const base = sum(included, (b) => b.base)
-  const required = pct * base
+  const base = sum(included, (b) => b.path.base)
+  const bau = sum(included, (b) => b.path.bau)
+  const growth = bau - base
+  const bauAt = (y) => sum(included, (b) => b.path.byYear[y])
+  const estimateSites = included.filter((b) => b.path.estimate).map((b) => b.site)
+  // The target never moves: (1 − pct) × FY2024. Required = BAU 2030 − target = pct × FY2024 + growth (spec §9, growth to 2030).
+  const target = base * (1 - pct)
+  const requiredBase = pct * base
+  const required = bau - target
   const counted = eligible(rows, category, siteId, includedIds)
   const approved = counted.filter((p) => p.status === 'Approved')
   const pending = counted.filter((p) => p.status === 'Pending approval')
@@ -220,12 +256,13 @@ function reductionTarget({ sites, refRows, rows, siteId, pct, category, field, s
   const surplus = Math.max(0, covered - required)
   const pathway = YEARS.map((y) => ({
     year: y,
-    target: base - (required * (y - BASE_YEAR)) / (TARGET_YEAR - BASE_YEAR),
-    approved: base - activeIn(approved, y),
-    approvedPending: base - activeIn(approved, y) - activeIn(pending, y),
+    target: base - (requiredBase * (y - BASE_YEAR)) / (TARGET_YEAR - BASE_YEAR),
+    bau: bauAt(y),
+    approved: bauAt(y) - activeIn(approved, y),
+    approvedPending: bauAt(y) - activeIn(approved, y) - activeIn(pending, y),
   }))
 
-  // bridge: base, one bar per approved lever (per site for the group view, per project for a site view), projected 2030, pending, gap, target
+  // bridge: base, growth to 2030, one bar per approved lever (per site for the group view, per project for a site view), projected 2030, pending, gap, target
   let levers
   if (siteId) {
     levers = approved
@@ -245,13 +282,35 @@ function reductionTarget({ sites, refRows, rows, siteId, pct, category, field, s
   }
   const bridge = [
     { kind: 'base', label: `FY${BASE_YEAR}`, value: base },
+    { kind: 'growth', label: 'Growth to 2030', short: 'Growth', value: growth, bau, estimate: estimateSites.length > 0 },
     ...levers.map((l) => ({ kind: 'lever', label: l.label, short: l.short, value: -l.value, key: l.key })),
-    { kind: 'projected', label: 'Projected 2030', value: base - covered },
+    { kind: 'projected', label: 'Projected 2030', value: bau - covered },
     { kind: 'pending', label: 'Pending, if approved', value: -ifApproved },
     { kind: 'gap', label: 'Gap', value: -uncovered },
-    { kind: 'target', label: 'Target 2030', value: base - required },
+    { kind: 'target', label: 'Target 2030', value: target },
   ]
-  return { base, required, covered, ifApproved, uncovered, surplus, missing, included: included.map((b) => b.site), pathway, bridge, approved, pending, pct }
+  return {
+    base,
+    bau,
+    growth,
+    target,
+    requiredBase,
+    required,
+    covered,
+    ifApproved,
+    uncovered,
+    surplus,
+    missing,
+    included: included.map((b) => b.site),
+    estimate: estimateSites.length > 0,
+    estimateSites,
+    perSite: included.map((b) => ({ site: b.site, ...b.path })),
+    pathway,
+    bridge,
+    approved,
+    pending,
+    pct,
+  }
 }
 
 // ---------- emissions
@@ -281,25 +340,30 @@ export function waterIntensity(ctx) {
     excluded.push(...siteRows.filter((s) => s.code === PALLET_SITE_CODE))
     siteRows = siteRows.filter((s) => s.code !== PALLET_SITE_CODE)
   }
-  const perSite = siteRows.map((s) => {
-    const w = num(figure(refRows, s.id, BASE_YEAR, 'actual')?.water_withdrawal_m3)
-    const out = outputPath(refRows, s.id)
-    return { site: s, withdrawal: w, output: out }
-  })
-  const missing = perSite.filter((x) => x.withdrawal === null || x.output === null).map((x) => x.site)
-  const included = perSite.filter((x) => x.withdrawal !== null && x.output !== null)
+  // Withdrawal follows the growth rule (spec §9, v1.4): it grows with output, or runs to the entered planned 2030 withdrawal,
+  // so a site's intensity never falls without a project. Output is interpolated straight-line to the planned 2030 output.
+  const perSite = siteRows.map((s) => ({ site: s, withdrawal: bauPath(refRows, s.id, 'water_withdrawal_m3'), output: outputPath(refRows, s.id) }))
+  const missing = perSite.filter((x) => !x.withdrawal || !x.output).map((x) => x.site)
+  const included = perSite.filter((x) => x.withdrawal && x.output)
   const includedIds = new Set(included.map((x) => x.site.id))
   const estimateSites = included.filter((x) => x.output.estimate).map((x) => x.site)
-  const W = sum(included, (x) => x.withdrawal)
+  const enteredSites = included.filter((x) => x.withdrawal.source === 'entered').map((x) => x.site)
+  const W = sum(included, (x) => x.withdrawal.base)
+  const Wbau = (y) => sum(included, (x) => x.withdrawal.byYear[y])
   const O = (y) => sum(included, (x) => x.output.byYear[y])
   const empty = included.length === 0 || O(BASE_YEAR) === 0
-  const baseIntensity = empty ? 0 : W / O(BASE_YEAR)
+  const ratio = (w, y) => (empty || O(y) === 0 ? 0 : w / O(y))
+  const baseIntensity = ratio(W, BASE_YEAR)
+  const bauIntensity = (y) => ratio(Wbau(y), y)
   const target = baseIntensity * (1 - pct)
-  const required = baseIntensity * pct
+  const requiredBase = baseIntensity * pct
+  const bau2030 = bauIntensity(TARGET_YEAR)
+  const growth = bau2030 - baseIntensity
+  const required = bau2030 - target
   const counted = eligible(rows, 'Water', siteId, includedIds)
   const approved = counted.filter((p) => p.status === 'Approved')
   const pending = counted.filter((p) => p.status === 'Pending approval')
-  const projected = (y, lists) => (empty ? 0 : (W - sum(lists, (l) => activeIn(l, y))) / O(y))
+  const projected = (y, lists) => ratio(Wbau(y) - sum(lists, (l) => activeIn(l, y)), y)
   const actualFor = (y) => {
     if (empty) return null
     let w = 0
@@ -317,22 +381,26 @@ export function waterIntensity(ctx) {
   const pathway = YEARS.map((y) => ({
     year: y,
     actual: actualFor(y),
+    bau: bauIntensity(y),
     approved: projected(y, [approved]),
     approvedPending: projected(y, [approved, pending]),
-    targetIntensity: baseIntensity - (required * (y - BASE_YEAR)) / (TARGET_YEAR - BASE_YEAR),
-    absoluteAsIntensity: empty ? 0 : (W - (absPct * W * (y - BASE_YEAR)) / (TARGET_YEAR - BASE_YEAR)) / O(y),
+    targetIntensity: baseIntensity - (requiredBase * (y - BASE_YEAR)) / (TARGET_YEAR - BASE_YEAR),
+    absoluteAsIntensity: ratio(W - (absPct * W * (y - BASE_YEAR)) / (TARGET_YEAR - BASE_YEAR), y),
     output: O(y),
   }))
   const projected2030 = projected(TARGET_YEAR, [approved])
   const projected2030Pending = projected(TARGET_YEAR, [approved, pending])
-  const covered = Math.max(0, baseIntensity - projected2030)
+  const covered = Math.max(0, bau2030 - projected2030)
   const ifApproved = Math.max(0, projected2030 - projected2030Pending)
   const uncovered = Math.max(0, required - covered - ifApproved)
   const surplus = Math.max(0, covered - required)
   return {
     pct,
     baseIntensity,
+    bau2030,
+    growth,
     target,
+    requiredBase,
     required,
     covered,
     ifApproved,
@@ -344,12 +412,14 @@ export function waterIntensity(ctx) {
     excluded,
     estimate: estimateSites.length > 0,
     estimateSites,
+    enteredSites,
     included: included.map((x) => x.site),
     pathway,
     approved,
     pending,
     unit: palletSite ? 'm³ per pallet' : 'm³ per t',
     withdrawal: W,
+    withdrawalBau2030: Wbau(TARGET_YEAR),
     outputBase: O(BASE_YEAR),
     output2030: O(TARGET_YEAR),
   }

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useAppState } from '../lib/appState.jsx'
 import { data, sitesSorted, personName } from '../lib/data.js'
-import { figure, latestActual, outputPath, BASE_YEAR, TARGET_YEAR, PALLET_SITE_CODE, indexBy } from '../lib/calculations.js'
-import { fmtInt, fmtNum, fmtPct, fmtDate, fmtDateTime } from '../lib/format.js'
+import { figure, latestActual, outputPath, bauPath, BASE_YEAR, TARGET_YEAR, PALLET_SITE_CODE, indexBy } from '../lib/calculations.js'
+import { fmtInt, fmtNum, fmtPct, fmtDate, fmtDateTime, signed } from '../lib/format.js'
 import { Card, Eyebrow, SectionTitle, Flag, Estimate, Modal } from '../components/ui.jsx'
 import { saveReferenceFigure, updateTarget, saveSite } from '../lib/actions.js'
 
@@ -161,6 +161,8 @@ function SiteCard({ site, refs, targets, canEnter }) {
   const plan = figure(refs, site.id, TARGET_YEAR, 'plan')
   const waste = latestActual(refs, site.id, (r) => r.waste_total_t != null && r.waste_diverted_t != null)
   const out = outputPath(refs, site.id)
+  const eBau = bauPath(refs, site.id, 'scope12_tco2e')
+  const wBau = bauPath(refs, site.id, 'water_withdrawal_m3')
   const pallets = site.code === PALLET_SITE_CODE
   const ePct = Number(targets.emissions?.value ?? 42) / 100
   const waPct = Number(targets.water_absolute?.value ?? 10) / 100
@@ -194,10 +196,10 @@ function SiteCard({ site, refs, targets, canEnter }) {
         </span>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-[13px]">
-        <Figure label={`FY${BASE_YEAR} Scope 1+2`} value={f24?.scope12_tco2e} unit="tCO₂e" who={who(f24)} derived={f24?.scope12_tco2e != null ? `−${Math.round(ePct * 100)} % = ${fmtInt(ePct * f24.scope12_tco2e)} tCO₂e by 2030` : null} />
-        <Figure label={`FY${BASE_YEAR} water withdrawal`} value={f24?.water_withdrawal_m3} unit="m³" who={who(f24)} derived={f24?.water_withdrawal_m3 != null ? `−${Math.round(waPct * 100)} % = ${fmtInt(waPct * f24.water_withdrawal_m3)} m³ by 2030` : null} />
+        <Figure label={`FY${BASE_YEAR} Scope 1+2`} value={f24?.scope12_tco2e} unit="tCO₂e" who={who(f24)} derived={eBau ? <GrowthDerived b={eBau} pct={ePct} unit="tCO₂e" /> : null} />
+        <Figure label={`FY${BASE_YEAR} water withdrawal`} value={f24?.water_withdrawal_m3} unit="m³" who={who(f24)} derived={wBau ? <GrowthDerived b={wBau} pct={waPct} unit="m³" /> : null} />
         <Figure label={`FY${BASE_YEAR} output`} value={f24?.output_t} unit={outUnit} who={who(f24)} derived={intensity != null ? `intensity ${fmtNum(intensity, 2)} m³/${pallets ? 'pallet' : 't'} → target ${fmtNum(intensity * (1 - wiPct), 2)}` : null} />
-        <Figure label={`Planned ${TARGET_YEAR} output`} value={plan?.output_t} unit={outUnit} who={who(plan)} missingLabel={<><Estimate /> FY{BASE_YEAR} held flat</>} derived={out ? `${fmtInt(out.byYear[TARGET_YEAR])} ${outUnit} used for 2030` : null} />
+        <Figure label={`Planned ${TARGET_YEAR} output`} value={plan?.output_t} unit={outUnit} who={who(plan)} missingLabel={<><Estimate /> FY{BASE_YEAR} held flat</>} derived={out ? `${fmtInt(out.byYear[TARGET_YEAR])} ${outUnit} used for 2030${out.base > 0 && !out.estimate ? ` (${fmtPct(out.plan / out.base - 1, 1).replace(/^(?!-)/, '+')} vs FY${BASE_YEAR})` : ''}` : null} />
         <Figure label={waste ? `FY${waste.year} total waste` : 'Latest total waste'} value={waste?.waste_total_t} unit="t" who={who(waste)} />
         <Figure label={waste ? `FY${waste.year} diverted` : 'Latest diverted waste'} value={waste?.waste_diverted_t} unit="t" who={who(waste)} derived={rate != null ? `rate ${fmtPct(rate, 1)} → target ≥ ${Math.round(wThr * 100)} %` : null} />
       </div>
@@ -243,6 +245,21 @@ function SiteCard({ site, refs, targets, canEnter }) {
       )}
       {dialog && <FigureDialog site={site} rows={siteRows} onClose={() => setDialog(false)} />}
     </Card>
+  )
+}
+
+const SOURCE_LABEL = { entered: 'entered planned 2030 figure', output: 'from planned output', flat: 'no planned output, held flat' }
+
+/** The site's reduction share, its growth to 2030 with the source of the business-as-usual figure, and the required reduction (spec §9, v1.4). */
+function GrowthDerived({ b, pct, unit }) {
+  return (
+    <>
+      <div>−{Math.round(pct * 100)} % = {fmtInt(pct * b.base)} {unit} by 2030</div>
+      <div>
+        growth to 2030 {signed(b.growth)} {unit} ({SOURCE_LABEL[b.source]}){b.estimate && <> <Estimate /></>}
+      </div>
+      <div>required {fmtInt(pct * b.base + b.growth)} {unit} per year</div>
+    </>
   )
 }
 
@@ -326,11 +343,16 @@ function FigureDialog({ site, rows, onClose }) {
             </label>
             <select id="rf-kind" className="rb-select" value={kind} onChange={(e) => setKind(e.target.value)}>
               <option value="actual">Actual (reported year)</option>
-              <option value="plan">Plan (planned output, e.g. 2030)</option>
+              <option value="plan">Plan (2030: planned output; planned Scope 1+2 and withdrawal optional)</option>
             </select>
           </div>
         </div>
         <p className="rb-caption text-[12px]">{existing ? `Updating the existing ${year} ${kind} row (entered by ${personName(existing.entered_by)}, ${fmtDate(existing.updated_at || existing.created_at)}). Leave a figure empty to clear it.` : `No ${year} ${kind} row yet: saving creates it.`}</p>
+        {kind === 'plan' && (
+          <p className="rb-caption text-[12px]">
+            On a {TARGET_YEAR} plan row the output sets the site's growth to {TARGET_YEAR}. Planned Scope 1+2 and withdrawal are optional: entered, they are the site's business-as-usual {TARGET_YEAR} figures before any project; empty, the tool derives them from the planned output with the FY{BASE_YEAR} intensity held.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           {FIGURE_FIELDS.map(([k, label, unit]) => (
             <div key={k}>

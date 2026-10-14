@@ -16,6 +16,7 @@
 | Key system | Publishable / secret keys (`sb_publishable_…` / `sb_secret_…`). The Netlify extension wrote the legacy `eyJ` values on 9 Oct 2026; the builder replaced both by hand the same day (`VITE_SUPABASE_ANON_KEY` = publishable key, `SUPABASE_SERVICE_ROLE_KEY` = secret key, marked secret). Nothing in this repo holds a key value. The legacy keys can be disabled in the dashboard once the live login works (§9) |
 | Auth | Supabase Auth, magic link, sign-ups off; as built in session 2 (§7) |
 | State on 9 October 2026 (session 2) | eight tables (the seven plus `reference_figures_history`), RLS on every one, the policies, triggers and functions of docs/access-matrix.md §6 in place; the demo portfolio seeded (profiles 10, reference_figures 20, projects 38, decisions 57, project_history 99); twenty-three migrations applied and saved in supabase/migrations/; refusal test half A passed (119 cases, supabase/refusal-test-half-a.sql) |
+| State on 14 October 2026 (session 5, spec v1.4) | growth to 2030 calculated in the browser from the existing columns; no database change; twenty-six migrations, unchanged |
 | State on 11 October 2026 (session 3, spec v1.3) | the approval presentation: four columns on `projects`, the private bucket `presentations` with three policies on `storage.objects`, the upload trigger, the endorsement check; every version existing before (the 38 demo rows) exempt; twenty-six migrations applied and saved; refusal test half A passed (190 cases, 65 of them v1.3) |
 
 ## 2. Tables
@@ -80,8 +81,8 @@ Seeded: emissions 42 · water_absolute 10 · water_intensity 20 · waste_diversi
 | site_id | uuid | → sites.id; null = group |
 | year | integer | not null, 2000–2100 |
 | kind | text | not null, in (`actual`, `plan`) |
-| scope12_tco2e | numeric(14,2) | ≥ 0; Scope 1+2, location-based, FY2024 factor set |
-| water_withdrawal_m3 | numeric(14,2) | ≥ 0 |
+| scope12_tco2e | numeric(14,2) | ≥ 0; Scope 1+2, location-based, FY2024 factor set. On a 2030 plan row (spec v1.4): the site's planned business-as-usual 2030 emissions, optional; empty = derived from output_t |
+| water_withdrawal_m3 | numeric(14,2) | ≥ 0. On a 2030 plan row (spec v1.4): the planned business-as-usual 2030 withdrawal, optional; empty = derived from output_t |
 | output_t | numeric(14,2) | ≥ 0; site 1100: pallets handled |
 | waste_total_t | numeric(14,2) | ≥ 0 |
 | waste_diverted_t | numeric(14,2) | ≥ 0, ≤ waste_total_t (`reference_figures_diverted_within_total`) |
@@ -311,6 +312,7 @@ Verified on 9 October 2026 in the dashboard: the extension's full list is `SUPAB
 - v1.3 (11 Oct 2026): the bucket's type and size limits and the signed URL are enforced by the Storage API, outside SQL, so half A covers the policies and the triggers and half B (the screens) covers the limits and the download. A move of an object between two Potential versions the same owner holds passes the storage policies (WITH CHECK sees only the new key); the endorsement check catches a version whose object went missing. Files of projects the demo reset removes stay in the bucket, unreachable, until the platform owner empties it (docs/demo-portfolio.md §5).
 - v1.3: `presentation_uploaded_at` is `clock_timestamp()`, the moment of the upload, so two uploads in one transaction are told apart; every other audit column stays `now()`.
 - The session's migration tool worked again on 11 Oct 2026 (three migrations applied without the time-out of 9 and 10 Oct); the SQL Editor path stays the fallback.
+- v1.4 (14 Oct 2026): growth to 2030 is calculated in the browser from the existing columns; no migration, no policy or function change. A 2030 plan row's `scope12_tco2e` and `water_withdrawal_m3` hold a site's planned business-as-usual figures when entered (same create and update rules, matrix lines 29 to 31); empty means derived from `output_t`. The demo plan rows carry output only.
 
 ## 10. Change log
 
@@ -337,4 +339,5 @@ Verified on 9 October 2026 in the dashboard: the extension's full list is `SUPAB
 | 2 | 10 Oct 2026 | `20261010090000_drop_demo_reset_leftovers.sql` | drops the `demo_snapshot` table and the four probe functions; applied by the builder in the SQL Editor (the session's migration tool timed out) with the same script recording it in `supabase_migrations.schema_migrations`; verified by Claude Code: no leftover object, 23 migrations recorded, demo data untouched |
 | 3 | 11 Oct 2026 | `20261011130852_approval_presentation_schema.sql` | spec v1.3: `projects.presentation_file_name`, `presentation_uploaded_by`, `presentation_uploaded_at`, `presentation_required` (added with default false, so every existing version is exempt without an update, then default true) and their checks; `presentation_key`, `presentation_object_exists`; `projects_protect` and `projects_write_history` extended; `new_project_version` starts a version without a file; `endorse_project` refuses a required presentation that is missing |
 | 3 | 11 Oct 2026 | `20261011130943_approval_presentation_bucket.sql` | the bucket `presentations` (private, 20 MB, PowerPoint MIME type only); `presentation_upload_allowed`; policies `presentations_read`, `presentations_upload`, `presentations_replace` on storage.objects; no anon, no delete |
+| 5 | 14 Oct 2026 | none | spec v1.4, growth to 2030: no database change; the 2030 plan row's existing `scope12_tco2e` and `water_withdrawal_m3` gain the meaning in §2 and §9 |
 | 3 | 11 Oct 2026 | `20261011132042_approval_presentation_upload_trigger.sql` | the presentation checks moved from `projects_protect` into `projects_set_presentation` (before update of `presentation_file_name`), so a replacement under the same name sets the uploader and the time (`clock_timestamp()`) and is logged; `projects_write_history` logs the `presentation` row on every change of the upload time |

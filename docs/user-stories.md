@@ -51,7 +51,7 @@ Format, one per line, then its acceptance line indented beneath it:
 ### site user — Overview
 
 - **As a site user, I see my site's portfolio against its share of each 2030 target, so that I know where my site stands.** `[projects · read · site user]`
-  Acceptance: Zee sees the KPI row, the three donuts, the three target cards and the three pathway tabs for 1200 only; the figures match 1200's rows; the year selector recalculates them.
+  Acceptance: Zee sees the KPI row, the three donuts, the three target cards and the three pathway tabs for 1200 only; the figures match 1200's rows and are as of today (the Overview carries no reporting year).
 - **As a site user, I cannot see the group view or another site, so that nothing of the other sites leaks.** `[projects · read · site user]` (= own)
   Acceptance: Zee has no site selector; a direct read of a 1000 project or a group project through the API returns nothing.
 - **As a site user, I see my site's reference figures behind the cards, so that the derived targets are mine.** `[reference_figures · read · site user]`
@@ -132,8 +132,8 @@ Format, one per line, then its acceptance line indented beneath it:
 
 - **As the CFO, I log in with a magic link, so that I need no password.** `[profiles · read · CFO]`
   Acceptance: Sam enters sustainatrend@gmail.com, opens the link and lands on the group Overview with the site selector.
-- **As the CFO, I see the group portfolio and switch to any site and year, so that I can read where the group stands.** `[projects · read · CFO]`
-  Acceptance: Sam changes the site to 1300 and the year to 2025; every figure recalculates; the emissions chart names the factor set.
+- **As the CFO, I see the group portfolio and switch to any site, so that I can read where the group stands.** `[projects · read · CFO]`
+  Acceptance: Sam changes the site to 1300; every figure recalculates, as of today; the emissions chart names the factor set. The reporting year (2025, say) is a filter of the Project register and of the review pack, not of the Overview.
 
 ### CFO — Project register and Project page
 
@@ -144,7 +144,7 @@ Format, one per line, then its acceptance line indented beneath it:
 - **As the CFO, I export the CSV of the register as filtered, so that I can take it into finance reporting.** `[projects · export (CSV) · CFO]`
   Acceptance: Sam downloads the CSV with the current filters; every column of spec §3 is present.
 - **As the CFO, I generate the review pack for a year, so that the committee gets its four pages.** `[projects · export (PDF) · CFO]`
-  Acceptance: Sam picks a year, generates, and downloads four pages whose figures match the Overview for that year.
+  Acceptance: Sam picks a year, generates, and downloads four pages; for the current year the figures match the Overview, for a past year they are the portfolio as it stood at that year's end.
 - **As the CFO, I cannot create a project, so that the register stays with the sites and the ESG lead.** `[projects · create (site project) · CFO]` (= no)
   Acceptance: Sam has no Register button; /projects/new sends him back; a direct insert is refused.
 - **As the CFO, I cannot act on a project, so that decisions stay with the ESG lead.** `[projects · change state → Approved or Declined · CFO]` (= no)

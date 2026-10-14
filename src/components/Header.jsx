@@ -5,7 +5,7 @@ import { sitesSorted, siteLabel } from '../lib/data.js'
 import { ROLE_LABEL } from '../lib/format.js'
 
 export function Header() {
-  const { viewer, siteSel, setSiteSel, canChooseSite, year, setYear, years, isEsgLead, isSiteUser } = useAppState()
+  const { viewer, siteSel, setSiteSel, canChooseSite, isEsgLead, isSiteUser } = useAppState()
   const { signOut } = useAuth()
   return (
     <header className="bg-white border-b border-rb-grey-line">
@@ -45,16 +45,6 @@ export function Header() {
               </select>
             </label>
           )}
-          <label className="flex items-center gap-1.5">
-            <span className="rb-caption">Year</span>
-            <select className="rb-select !w-auto !py-1" value={year} onChange={(e) => setYear(Number(e.target.value))} aria-label="Reporting year">
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </label>
           <button className="rb-btn rb-btn--small" onClick={signOut}>
             Sign out
           </button>

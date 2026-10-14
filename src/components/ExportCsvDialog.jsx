@@ -5,9 +5,13 @@ import { registerRows } from '../lib/calculations.js'
 import { CSV_COLUMNS, csvRows, toCsv, csvFileName, downloadCsv } from '../lib/csv.js'
 import { Modal } from './ui.jsx'
 
-/** Confirms the filters that apply and downloads the CSV. `rows` are the register rows as filtered on screen; without them the whole scope is exported. */
-export function ExportCsvDialog({ onClose, filters = {}, rows }) {
-  const { siteId, year, isSiteUser, viewer } = useAppState()
+/**
+ * Confirms the filters that apply and downloads the CSV. `rows` are the register rows as filtered on screen; without them the whole
+ * scope is exported. `year` overrides the register's reporting year: the Overview, which carries no year, exports as of today.
+ */
+export function ExportCsvDialog({ onClose, filters = {}, rows, year: yearProp }) {
+  const { siteId, year: stateYear, isSiteUser, viewer } = useAppState()
+  const year = yearProp ?? stateYear
   const exportRows = useMemo(() => rows || registerRows(data, { siteId, year }).rows, [rows, siteId, year])
   const fileName = csvFileName({ year, siteId, category: filters.category, status: filters.status })
   const applied = [

@@ -4,6 +4,7 @@
 **Population pattern:** P2 internal only
 **Date:** 9 October 2026 (full run; the short run of the same date is extended here, never replaced)
 **Iteration:** 11 October 2026, the approval presentation (spec v1.3, builder decision): the storage bucket rows in Section 1, two project rows, the v1.3 delta in Section 5, lines 50 to 62 of the policy plan, rule 6 in Section 7. Extended, not replaced.
+**Checked against spec v1.4** (14 October 2026, growth to 2030): no role, table, column, action or rule changes; the 2030 plan row's existing figure columns carry a site's planned business-as-usual figures under the existing create and update rules (lines 29 to 31). This matrix holds unchanged.
 **Author:** Zyad Hatquai
 **Status:** Confirmed
 **Companion file:** user-stories.md

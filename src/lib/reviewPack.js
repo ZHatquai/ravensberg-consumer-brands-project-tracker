@@ -15,6 +15,9 @@ const GREY = [107, 107, 107]
 const LINE = [221, 219, 211]
 const WHITE = [255, 255, 255]
 const ATTENTION = [217, 142, 43]
+const LIGHTLEAF = [210, 227, 202] // very light Leaf Green tint: growth to 2030 (spec §10, v1.4)
+const signedInt = (v) => `${Number(v) < 0 ? '−' : '+'}${fmtInt(Math.abs(Number(v)))}`
+const signed2 = (v) => `${Number(v) < 0 ? '−' : '+'}${fmtNum(Math.abs(Number(v)), 2)}`
 
 const PAGE = { w: 210, h: 297 }
 const M = 16 // margin, mm
@@ -204,10 +207,12 @@ function chartBridge(doc, x, y, w, h, bridge, unit) {
     const top = sx(s.hi)
     const hh = Math.max(0.3, sx(s.lo) - sx(s.hi))
     if (s.kind === 'gap') hatch(doc, bx, top, bwid, hh)
+    else if (s.kind === 'growth') rect(doc, bx, top, bwid, hh, LIGHTLEAF, LEAF)
     else rect(doc, bx, top, bwid, hh, s.kind === 'lever' ? GREEN : s.kind === 'pending' ? TAUPE : GREY)
     const v = s.value
-    txt(doc, v === 0 ? '0' : `${v < 0 ? '−' : ''}${fmtInt(Math.abs(v))}`, bx + bwid / 2, top - 1.2, { font: 'Montserrat', size: 6, align: 'center' })
-    const label = s.kind === 'lever' ? (s.label.match(/^(\d{4}|PRJ-\d{4})/)?.[1] || s.label.slice(0, 8)) : s.kind === 'pending' ? 'Pending' : s.kind === 'projected' ? 'Proj. 2030' : s.label
+    const anchor = s.kind === 'base' || s.kind === 'projected' || s.kind === 'target'
+    txt(doc, anchor ? fmtInt(v) : v === 0 ? '0' : signedInt(v), bx + bwid / 2, top - 1.2, { font: 'Montserrat', size: 6, align: 'center' })
+    const label = s.kind === 'lever' ? (s.label.match(/^(\d{4}|PRJ-\d{4})/)?.[1] || s.label.slice(0, 8)) : s.kind === 'growth' ? 'Growth' : s.kind === 'pending' ? 'Pending' : s.kind === 'projected' ? 'Proj. 2030' : s.label
     txt(doc, label, bx + bwid / 2, y + plotH + 3.5, { size: 6.2, color: GREY, align: 'center' })
   })
   line(doc, plotX, y + plotH, plotX + plotW, y + plotH, LINE, 0.3)
@@ -217,6 +222,7 @@ function chartTrajectory(doc, x, y, w, h, wi) {
   const rows = wi.pathway
   const series = [
     ['actual', CHARCOAL, null, 0.6],
+    ['bau', LEAF, [0.8, 0.8], 0.5],
     ['approved', GREEN, null, 0.7],
     ['approvedPending', TAUPE, [1.5, 1], 0.6],
     ['targetIntensity', GREY, [2, 1.2], 0.45],
@@ -281,10 +287,10 @@ function chartWaste(doc, x, y, w, h, waste) {
 
 function legend(doc, x, y, items) {
   let cx = x
-  for (const [label, color, kind] of items) {
+  for (const [label, color, kind, stroke] of items) {
     if (kind === 'hatch') hatch(doc, cx, y - 2.2, 4, 2.6, 0.9)
     else if (kind === 'dash') line(doc, cx, y - 0.9, cx + 4, y - 0.9, color, 0.5, [1, 0.8])
-    else rect(doc, cx, y - 2.2, 4, 2.6, color)
+    else rect(doc, cx, y - 2.2, 4, 2.6, color, stroke)
     txt(doc, label, cx + 5.2, y, { size: 6.8, color: GREY })
     cx += 5.2 + doc.getTextWidth(label) + 5
   }
@@ -333,29 +339,29 @@ export async function generateReviewPack({ year, siteId = null, generatedBy }) {
   // target cards
   const cy = BODY_TOP + 32
   const cw = (CONTENT_W - 2 * 4) / 3
-  const ch = 92
+  const ch = 100
   const cards = [M, M + cw + 4, M + 2 * (cw + 4)]
   cards.forEach((cx) => rect(doc, cx, cy, cw, ch, WHITE, LINE))
   // emissions
   let cx = cards[0]
   txt(doc, 'EMISSIONS', cx + 3, cy + 6, { style: 'bold', size: 7, color: GREEN })
   txt(doc, `−${Math.round(e.pct * 100)} % Scope 1+2 by 2030`, cx + 3, cy + 12, { font: 'Montserrat', size: 9.5, color: GREEN })
-  txt(doc, `Required ${fmtInt(e.required)} tCO₂e per year (${Math.round(e.pct * 100)} % of FY2024 ${fmtInt(e.base)} tCO₂e)`, cx + 3, cy + 18, { size: 7.5, color: GREY, maxWidth: cw - 6 })
-  meter(doc, cx + 3, cy + 26, cw - 6, e)
-  meterFigures(doc, cx + 3, cy + 36, cw - 6, e, (v) => fmtInt(v))
-  if (e.surplus > 0) txt(doc, `+${fmtInt(e.surplus)} tCO₂e above target`, cx + 3, cy + 47, { size: 7.5 })
-  if (e.missing.length) txt(doc, `Reference figures missing: ${e.missing.map((s) => s.code).join(', ')}`, cx + 3, cy + 52, { size: 7.5, color: [192, 57, 43], maxWidth: cw - 6 })
+  txt(doc, `Required ${fmtInt(e.required)} tCO₂e per year: ${Math.round(e.pct * 100)} % of FY2024 ${fmtInt(e.base)} = ${fmtInt(e.requiredBase)}, plus growth to 2030 ${signedInt(e.growth)} (business as usual 2030 ${fmtInt(e.bau)}; target ${fmtInt(e.target)})${e.estimate ? ' (estimate)' : ''}`, cx + 3, cy + 18, { size: 7, color: GREY, maxWidth: cw - 6 })
+  meter(doc, cx + 3, cy + 34, cw - 6, e)
+  meterFigures(doc, cx + 3, cy + 44, cw - 6, e, (v) => fmtInt(v))
+  if (e.surplus > 0) txt(doc, `+${fmtInt(e.surplus)} tCO₂e above target`, cx + 3, cy + 55, { size: 7.5 })
+  if (e.missing.length) txt(doc, `Reference figures missing: ${e.missing.map((s) => s.code).join(', ')}`, cx + 3, cy + 60, { size: 7.5, color: [192, 57, 43], maxWidth: cw - 6 })
   txt(doc, FACTOR_SET, cx + 3, cy + ch - 4, { size: 6.5, color: GREY, maxWidth: cw - 6 })
   // water
   cx = cards[1]
   txt(doc, 'WATER', cx + 3, cy + 6, { style: 'bold', size: 7, color: GREEN })
   txt(doc, `−${Math.round(wa.pct * 100)} % withdrawal · −${Math.round(wi.pct * 100)} % intensity`, cx + 3, cy + 12, { font: 'Montserrat', size: 8.8, color: GREEN })
-  txt(doc, `Absolute: required ${fmtInt(wa.required)} m³ per year of FY2024 ${fmtInt(wa.base)} m³`, cx + 3, cy + 18, { size: 7.5, color: GREY, maxWidth: cw - 6 })
-  meter(doc, cx + 3, cy + 26, cw - 6, wa)
-  meterFigures(doc, cx + 3, cy + 36, cw - 6, wa, (v) => fmtInt(v))
-  txt(doc, `Intensity, ${wi.unit}: FY2024 ${fmtNum(wi.baseIntensity, 2)} → target ${fmtNum(wi.target, 2)}${wi.estimate ? ' (estimate)' : ''}`, cx + 3, cy + 52, { size: 7.5, color: GREY, maxWidth: cw - 6 })
-  meter(doc, cx + 3, cy + 58, cw - 6, wi)
-  meterFigures(doc, cx + 3, cy + 68, cw - 6, wi, (v) => fmtNum(v, 2))
+  txt(doc, `Absolute: required ${fmtInt(wa.required)} m³ per year: ${Math.round(wa.pct * 100)} % of FY2024 ${fmtInt(wa.base)} = ${fmtInt(wa.requiredBase)}, plus growth to 2030 ${signedInt(wa.growth)} (business as usual 2030 ${fmtInt(wa.bau)}; target ${fmtInt(wa.target)})${wa.estimate ? ' (estimate)' : ''}`, cx + 3, cy + 18, { size: 7, color: GREY, maxWidth: cw - 6 })
+  meter(doc, cx + 3, cy + 33, cw - 6, wa)
+  meterFigures(doc, cx + 3, cy + 43, cw - 6, wa, (v) => fmtInt(v))
+  txt(doc, `Intensity, ${wi.unit}: FY2024 ${fmtNum(wi.baseIntensity, 2)} → target ${fmtNum(wi.target, 2)}; business as usual 2030 ${fmtNum(wi.bau2030, 2)} (growth ${signed2(wi.growth)})${wi.estimate ? ' (estimate)' : ''}`, cx + 3, cy + 54, { size: 7, color: GREY, maxWidth: cw - 6 })
+  meter(doc, cx + 3, cy + 65, cw - 6, wi)
+  meterFigures(doc, cx + 3, cy + 75, cw - 6, wi, (v) => fmtNum(v, 2))
   if (wi.excluded.length) txt(doc, `Site ${wi.excluded.map((s) => s.code).join(', ')} reports pallets: excluded from the group intensity.`, cx + 3, cy + ch - 4, { size: 6.5, color: GREY, maxWidth: cw - 6 })
   // waste
   cx = cards[2]
@@ -378,7 +384,7 @@ export async function generateReviewPack({ year, siteId = null, generatedBy }) {
   }
   if (w.capped.length) txt(doc, `* Rate above 100 % capped at ${w.capped.map((s) => s.code).join(', ')}: check the tonnage.`, cx + 3, cy + ch - 4, { size: 6.5, color: GREY, maxWidth: cw - 6 })
   legend(doc, M, cy + ch + 6, [['Approved', GREEN], ['Pending, if approved', TAUPE], ['Uncovered', null, 'hatch']])
-  txt(doc, 'Approved projects count in full from their start year to 2030; pending projects are shown as "if approved" and never count in the covered figure. Potential, Declined, Retired and Obsolete projects count in no target figure. Estimates are labelled.', M, cy + ch + 13, { size: 7.5, color: GREY, maxWidth: CONTENT_W })
+  txt(doc, 'Required = the target share of FY2024 plus the growth to 2030 (business as usual from the planned output, or the planned 2030 figure where entered); the target itself stays at FY2024 minus the target share. Approved projects count in full from their start year to 2030; pending projects are shown as "if approved" and never count in the covered figure. Potential, Declined, Retired and Obsolete projects count in no target figure. Estimates are labelled.', M, cy + ch + 13, { size: 7.5, color: GREY, maxWidth: CONTENT_W })
 
   // ---- Page 2: Pathways
   doc.addPage()
@@ -388,14 +394,14 @@ export async function generateReviewPack({ year, siteId = null, generatedBy }) {
   txt(doc, 'Emissions bridge', M, yy, { font: 'Montserrat', size: 10, color: GREEN })
   txt(doc, 'tCO₂e per year', M + 34, yy, { size: 7.5, color: GREY })
   chartBridge(doc, M, yy + 6, CONTENT_W, chartH, e.bridge, 'tCO₂e per year')
-  legend(doc, M, yy + chartH + 11, [['Reference (base, projected, target)', GREY], ['Approved levers', GREEN], ['Pending, if approved', TAUPE], ['Gap', null, 'hatch']])
-  txt(doc, `From the FY2024 Scope 1+2 figure to 2030: each approved lever counts its full annual impact in 2030; the gap is what no project covers yet. ${FACTOR_SET}.`, M, yy + chartH + 16, { size: 7.5, color: GREY, maxWidth: CONTENT_W })
+  legend(doc, M, yy + chartH + 11, [['Reference (base, projected, target)', GREY], ['Growth to 2030 (business as usual)', LIGHTLEAF, null, LEAF], ['Approved levers', GREEN], ['Pending, if approved', TAUPE], ['Gap', null, 'hatch']])
+  txt(doc, `From the FY2024 Scope 1+2 figure to 2030: growth to 2030 first (business as usual, from the planned output or the planned 2030 figure where entered), then each approved lever counts its full annual impact in 2030; the gap is what no project covers yet.${e.estimate ? ` Estimate: no planned 2030 output for ${e.estimateSites.map((s) => s.code).join(', ')}, held flat.` : ''} ${FACTOR_SET}.`, M, yy + chartH + 16, { size: 7.5, color: GREY, maxWidth: CONTENT_W })
   yy += chartH + 26
   txt(doc, 'Water intensity trajectory', M, yy, { font: 'Montserrat', size: 10, color: GREEN })
   txt(doc, wi.unit, M + 50, yy, { size: 7.5, color: GREY })
   chartTrajectory(doc, M, yy + 6, CONTENT_W, chartH, wi)
-  legend(doc, M, yy + chartH + 11, [['Actual', CHARCOAL], ['Projected, approved', GREEN], ['Projected, approved and pending', TAUPE], ['Intensity target (−20 %)', GREY, 'dash'], ['Absolute target as intensity', GREY, 'dash']])
-  txt(doc, `Withdrawal minus approved savings over output interpolated straight-line from FY2024 to the planned 2030 output, in ${wi.unit}.${wi.estimate ? ` Estimate: output held flat at FY2024 for ${wi.estimateSites.map((s) => s.code).join(', ')} (no 2030 plan).` : ''}${wi.excluded.length ? ` Site ${wi.excluded.map((s) => s.code).join(', ')} reports pallets and is excluded from the group intensity.` : ''}`, M, yy + chartH + 16, { size: 7.5, color: GREY, maxWidth: CONTENT_W })
+  legend(doc, M, yy + chartH + 11, [['Actual', CHARCOAL], ['Business as usual', LEAF, 'dash'], ['Projected, approved', GREEN], ['Projected, approved and pending', TAUPE], ['Intensity target (−20 %)', GREY, 'dash'], ['Absolute target as intensity', GREY, 'dash']])
+  txt(doc, `Withdrawal grown with output (or the planned 2030 withdrawal where entered) minus approved savings, over output interpolated straight-line from FY2024 to the planned 2030 output, in ${wi.unit}; business as usual is the same without projects.${wi.estimate ? ` Estimate: output held flat at FY2024 for ${wi.estimateSites.map((s) => s.code).join(', ')} (no 2030 plan).` : ''}${wi.excluded.length ? ` Site ${wi.excluded.map((s) => s.code).join(', ')} reports pallets and is excluded from the group intensity.` : ''}`, M, yy + chartH + 16, { size: 7.5, color: GREY, maxWidth: CONTENT_W })
   yy += chartH + 26
   txt(doc, 'Waste diversion by site', M, yy, { font: 'Montserrat', size: 10, color: GREEN })
   txt(doc, 'diversion rate, latest actual year and 2030', M + 44, yy, { size: 7.5, color: GREY })

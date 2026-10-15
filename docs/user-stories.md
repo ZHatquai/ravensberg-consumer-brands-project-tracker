@@ -3,6 +3,7 @@
 **Written against:** product-spec.md v1.3 · supabase-setup.md as of 10 October 2026
 **Date:** 9 October 2026 (full run; extends the short run of the same date)
 **Iteration:** 11 October 2026, the approval presentation (spec v1.3): the stories marked v1.3 and refusals 29 to 36. Extended, not replaced.
+**Iteration:** 14 October 2026, growth to 2030 (spec v1.4): the stories marked v1.4 (site user Overview and Reference data, ESG lead Reference data); no new cell, no new refusal. Extended, not replaced.
 **Author:** Zyad Hatquai
 **Status:** Confirmed
 **Population pattern:** P2 internal only, as in access-matrix.md
@@ -55,7 +56,9 @@ Format, one per line, then its acceptance line indented beneath it:
 - **As a site user, I cannot see the group view or another site, so that nothing of the other sites leaks.** `[projects · read · site user]` (= own)
   Acceptance: Zee has no site selector; a direct read of a 1000 project or a group project through the API returns nothing.
 - **As a site user, I see my site's reference figures behind the cards, so that the derived targets are mine.** `[reference_figures · read · site user]`
-  Acceptance: the emissions card's required figure is 42 % of 1200's FY2024 Scope 1+2; the water intensity meter uses 1200's withdrawal and output.
+  Acceptance: the emissions card's target is 58 % of 1200's FY2024 Scope 1+2 and its required figure is 42 % of that FY2024 figure plus 1200's growth to 2030 (v1.4: from 1200's planned 2030 output, or its planned 2030 Scope 1+2 where entered); the water intensity meter uses 1200's withdrawal and output.
+- **(v1.4) As a site user, I see how much of my site's gap is growth, so that I know what the projects have to beat.** `[reference_figures · read · site user]`
+  Acceptance: Zee's emissions card states "42 % of FY2024 = X, plus growth to 2030 +Y" with 1200's business-as-usual 2030 figure; the bridge shows one light green growth bar after FY2024; the Reference data card for 1200 shows the growth of its emissions and its withdrawal with the source ("from planned output", "entered" or "estimate").
 
 ### site user — Project register
 
@@ -116,6 +119,8 @@ Format, one per line, then its acceptance line indented beneath it:
   Acceptance: Zee corrects 1200's withdrawal; the Overview recalculates; the figure's history shows old value, new value, Zee and the time.
 - **As a site user, I cannot see or change another site's figures, so that nothing leaks.** `[reference_figures · read · site user]` (= own)
   Acceptance: the Reference data screen shows 1200 only; a direct read of a 1000 row returns nothing.
+- **(v1.4) As a site user, I enter my site's planned 2030 Scope 1+2 or withdrawal on its 2030 plan row, so that the growth to 2030 is my site's own plan rather than a figure derived from output.** `[reference_figures · create / update · site user]`
+  Acceptance: Zee enters a planned 2030 Scope 1+2 on 1200's plan row; the Reference data card says "entered", the emissions card's growth becomes that figure minus FY2024 and the bridge's growth bar follows; clearing it returns to the figure derived from the planned output; the history logs the change.
 - **As a site user, I cannot change the group targets, so that the targets stay with Group Sustainability.** `[targets · update · site user]` (= no)
   Acceptance: the targets block is read-only for Zee; a direct update is refused.
 
@@ -217,7 +222,7 @@ Format, one per line, then its acceptance line indented beneath it:
 ### ESG lead (admin) — Reference data
 
 - **As the ESG lead, I enter or update any site's figures and the group's, so that the base year is complete.** `[reference_figures · create / update · ESG lead]`
-  Acceptance: Zyad enters the 2030 output plan for 1500; the estimate label on the Overview disappears; the figure's history shows the change.
+  Acceptance: Zyad enters the 2030 output plan for 1500; the estimate label on the Overview disappears and 1500's growth to 2030 follows its planned output (v1.4); the figure's history shows the change. (v1.4) Zyad enters a planned 2030 withdrawal for 1000 on its plan row; the water cards' growth for 1000 becomes that figure minus FY2024 and the Reference data card marks it "entered".
 - **As the ESG lead, I set the group targets, so that the dashboard measures against the right numbers.** `[targets · update · ESG lead]`
   Acceptance: Zyad enters the new value and the reason and clicks "Change the target"; a pop-up warns that the change applies to the whole organisation, shows what changes and the reason, and asks for "I understand"; back on the form, the second click applies it and a confirmation lists the change; the Overview recalculates; without a reason, or with the category, the change is refused; the reason, the name and the time show on the Targets table.
 - **As the ESG lead, I maintain the site list, so that a closed site is deactivated and a new one added without a code change.** `[sites · maintain lists · ESG lead]`
